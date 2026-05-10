@@ -17,6 +17,8 @@ import javax.swing.border.EmptyBorder;
 import com.tuyensinh.ui.AppColor;
 import com.tuyensinh.ui.RoundedButton;
 import com.tuyensinh.ui.candidate.CandidateManagementPanel;
+import com.tuyensinh.ui.combination.CombinationManagementPanel;
+import com.tuyensinh.ui.major.MajorManagementPanel;
 import com.tuyensinh.ui.user.UserManagementPanel;
 
 public class DashboardFrame extends JFrame {
@@ -79,8 +81,8 @@ public class DashboardFrame extends JFrame {
 
         contentPanel.add(new UserManagementPanel(), "USER");
         contentPanel.add(new CandidateManagementPanel(), "CANDIDATE");
-        contentPanel.add(createPlaceholderPanel("Quản lý ngành"), "MAJOR");
-        contentPanel.add(createPlaceholderPanel("Quản lý tổ hợp môn"), "COMBINATION");
+        contentPanel.add(new MajorManagementPanel(), "MAJOR");
+        contentPanel.add(new CombinationManagementPanel(), "COMBINATION");
         contentPanel.add(createPlaceholderPanel("Ngành - tổ hợp"), "MAJOR_COMBINATION");
         contentPanel.add(createPlaceholderPanel("Điểm thí sinh"), "SCORE");
         contentPanel.add(createPlaceholderPanel("Điểm cộng"), "BONUS");
