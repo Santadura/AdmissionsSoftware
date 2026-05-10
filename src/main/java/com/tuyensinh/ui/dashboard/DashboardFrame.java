@@ -16,6 +16,7 @@ import javax.swing.border.EmptyBorder;
 
 import com.tuyensinh.ui.AppColor;
 import com.tuyensinh.ui.RoundedButton;
+import com.tuyensinh.ui.candidate.CandidateManagementPanel;
 import com.tuyensinh.ui.user.UserManagementPanel;
 
 public class DashboardFrame extends JFrame {
@@ -77,7 +78,7 @@ public class DashboardFrame extends JFrame {
         contentPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
         contentPanel.add(new UserManagementPanel(), "USER");
-        contentPanel.add(createPlaceholderPanel("Quản lý thí sinh"), "CANDIDATE");
+        contentPanel.add(new CandidateManagementPanel(), "CANDIDATE");
         contentPanel.add(createPlaceholderPanel("Quản lý ngành"), "MAJOR");
         contentPanel.add(createPlaceholderPanel("Quản lý tổ hợp môn"), "COMBINATION");
         contentPanel.add(createPlaceholderPanel("Ngành - tổ hợp"), "MAJOR_COMBINATION");
