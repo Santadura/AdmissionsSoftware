@@ -16,6 +16,8 @@ import javax.swing.border.EmptyBorder;
 
 import com.tuyensinh.ui.AppColor;
 import com.tuyensinh.ui.RoundedButton;
+import com.tuyensinh.ui.aspiration.AspirationManagementPanel;
+import com.tuyensinh.ui.bonus.BonusManagementPanel;
 import com.tuyensinh.ui.candidate.CandidateManagementPanel;
 import com.tuyensinh.ui.user.UserManagementPanel;
 
@@ -83,8 +85,8 @@ public class DashboardFrame extends JFrame {
         contentPanel.add(createPlaceholderPanel("Quản lý tổ hợp môn"), "COMBINATION");
         contentPanel.add(createPlaceholderPanel("Ngành - tổ hợp"), "MAJOR_COMBINATION");
         contentPanel.add(createPlaceholderPanel("Điểm thí sinh"), "SCORE");
-        contentPanel.add(createPlaceholderPanel("Điểm cộng"), "BONUS");
-        contentPanel.add(createPlaceholderPanel("Nguyện vọng / Xét tuyển"), "ASPIRATION");
+        contentPanel.add(new BonusManagementPanel(), "BONUS");
+        contentPanel.add(new AspirationManagementPanel(), "ASPIRATION");
         contentPanel.add(createPlaceholderPanel("Bảng quy đổi"), "CONVERSION");
 
         String[] cardKeys = {
