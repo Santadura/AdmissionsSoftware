@@ -15,11 +15,14 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
+import com.tuyensinh.entity.User;
+import com.tuyensinh.service.UserService;
 import com.tuyensinh.ui.AppColor;
 import com.tuyensinh.ui.RoundedButton;
 import com.tuyensinh.ui.dashboard.DashboardFrame;
@@ -29,7 +32,11 @@ public class LoginFrame extends JFrame {
     private JPasswordField txtPassword;
     private JButton btnLogin;
 
+    private UserService userService;
+
     public LoginFrame() {
+        userService = new UserService();
+
         setTitle("Đăng nhập hệ thống tuyển sinh");
         setSize(640, 420);
         setLocationRelativeTo(null);
@@ -118,10 +125,10 @@ public class LoginFrame extends JFrame {
 
         btnLogin = new RoundedButton("Đăng nhập", AppColor.PRIMARY, AppColor.PRIMARY_DARK, 20);
         btnLogin.setPreferredSize(new Dimension(180, 44));
-        btnLogin.addActionListener(e -> {
-            new DashboardFrame().setVisible(true);
-            dispose();
-        });
+        btnLogin.addActionListener(e -> handleLogin());
+
+        txtPassword.addActionListener(e -> handleLogin());
+        txtUsername.addActionListener(e -> handleLogin());
 
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 10));
         bottomPanel.setOpaque(false);
@@ -133,5 +140,24 @@ public class LoginFrame extends JFrame {
 
         root.add(loginCard);
         setContentPane(root);
+    }
+
+    private void handleLogin() {
+        String username = txtUsername.getText().trim();
+        String password = new String(txtPassword.getPassword());
+
+        try {
+            User user = userService.loginAdmin(username, password);
+            JOptionPane.showMessageDialog(this, "Đăng nhập thành công: " + user.getUsername());
+            new DashboardFrame().setVisible(true);
+            dispose();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    ex.getMessage(),
+                    "Đăng nhập thất bại",
+                    JOptionPane.WARNING_MESSAGE
+            );
+        }
     }
 }
