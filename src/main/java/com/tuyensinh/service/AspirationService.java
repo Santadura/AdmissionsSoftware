@@ -3,12 +3,9 @@ package com.tuyensinh.service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 import com.tuyensinh.entity.Aspiration;
 import com.tuyensinh.repository.AspirationRepository;
@@ -107,50 +104,71 @@ public class AspirationService {
                 .thenComparing(a -> a.getId() == null ? Integer.MAX_VALUE : a.getId());
 
         int passed = 0;
-        Set<String> admittedCandidates = new HashSet<>();
-        Map<String, Integer> remainingQuotas = new HashMap<>(quotas);
-        TreeSet<Integer> priorities = new TreeSet<>();
+        
+        // Group aspirations by candidate
+        Map<String, List<Aspiration>> candidateAspirations = new HashMap<>();
         for (Aspiration aspiration : eligibleAspirations) {
-            priorities.add(aspiration.getThuTu() == null ? Integer.MAX_VALUE : aspiration.getThuTu());
+            candidateAspirations.computeIfAbsent(aspiration.getCccd(), k -> new ArrayList<>()).add(aspiration);
         }
 
-        for (Integer priority : priorities) {
-            Map<String, List<Aspiration>> currentRoundByMajor = new HashMap<>();
-            for (Aspiration aspiration : eligibleAspirations) {
-                int aspirationPriority = aspiration.getThuTu() == null ? Integer.MAX_VALUE : aspiration.getThuTu();
-                if (aspirationPriority == priority && !admittedCandidates.contains(aspiration.getCccd())) {
-                    currentRoundByMajor
-                            .computeIfAbsent(aspiration.getMaNganh(), key -> new ArrayList<>())
-                            .add(aspiration);
-                }
+        // Sort each candidate's aspirations by priority (ascending)
+        for (List<Aspiration> asps : candidateAspirations.values()) {
+            asps.sort(Comparator.comparing(a -> a.getThuTu() == null ? Integer.MAX_VALUE : a.getThuTu()));
+        }
+
+        java.util.Queue<String> applicantsToCheck = new java.util.LinkedList<>(candidateAspirations.keySet());
+        Map<String, Integer> candidateNextAspIndex = new HashMap<>();
+        for (String cccd : candidateAspirations.keySet()) {
+            candidateNextAspIndex.put(cccd, 0);
+        }
+
+        Map<String, List<Aspiration>> currentAdmitted = new HashMap<>();
+        for (String major : quotas.keySet()) {
+            currentAdmitted.put(major, new ArrayList<>());
+        }
+
+        while (!applicantsToCheck.isEmpty()) {
+            String cccd = applicantsToCheck.poll();
+            int attemptIdx = candidateNextAspIndex.get(cccd);
+            List<Aspiration> asps = candidateAspirations.get(cccd);
+
+            if (attemptIdx >= asps.size()) {
+                continue; // out of aspirations
             }
 
-            for (Map.Entry<String, List<Aspiration>> entry : currentRoundByMajor.entrySet()) {
-                int remainingQuota = Math.max(remainingQuotas.getOrDefault(entry.getKey(), 0), 0);
-                if (remainingQuota <= 0) {
-                    continue;
-                }
+            Aspiration proposing = asps.get(attemptIdx);
+            String major = proposing.getMaNganh();
 
-                List<Aspiration> ranked = entry.getValue();
-                ranked.sort(ranking);
-                for (Aspiration aspiration : ranked) {
-                    if (remainingQuota <= 0) {
-                        break;
-                    }
-                    aspiration.setKetQua("trungtuyen");
-                    admittedCandidates.add(aspiration.getCccd());
-                    remainingQuota--;
-                    passed++;
-                }
-                remainingQuotas.put(entry.getKey(), remainingQuota);
+            List<Aspiration> admittedInMajor = currentAdmitted.get(major);
+            if (admittedInMajor == null) {
+                admittedInMajor = new ArrayList<>();
+                currentAdmitted.put(major, admittedInMajor);
+            }
+            
+            admittedInMajor.add(proposing);
+            admittedInMajor.sort(ranking);
+
+            int quota = quotas.getOrDefault(major, 0);
+            if (admittedInMajor.size() > quota) {
+                // Reject the lowest ranked aspiration
+                Aspiration rejected = admittedInMajor.remove(admittedInMajor.size() - 1);
+                String rejectedCccd = rejected.getCccd();
+                candidateNextAspIndex.put(rejectedCccd, candidateNextAspIndex.get(rejectedCccd) + 1);
+                applicantsToCheck.add(rejectedCccd);
             }
         }
 
         int failed = 0;
         for (Aspiration aspiration : eligibleAspirations) {
-            if (!"trungtuyen".equals(aspiration.getKetQua())) {
-                aspiration.setKetQua("khongtrungtuyen");
-                failed++;
+            aspiration.setKetQua("khongtrungtuyen");
+            failed++;
+        }
+        
+        for (List<Aspiration> admitted : currentAdmitted.values()) {
+            for (Aspiration aspiration : admitted) {
+                aspiration.setKetQua("trungtuyen");
+                passed++;
+                failed--; // Adjust since we set everyone to failed initially
             }
         }
 
