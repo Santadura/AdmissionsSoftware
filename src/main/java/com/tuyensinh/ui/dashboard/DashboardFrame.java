@@ -18,6 +18,7 @@ import com.tuyensinh.ui.AppColor;
 import com.tuyensinh.ui.RoundedButton;
 import com.tuyensinh.ui.candidate.CandidateManagementPanel;
 import com.tuyensinh.ui.user.UserManagementPanel;
+import com.tuyensinh.ui.score.ScoreManagementPanel;
 
 public class DashboardFrame extends JFrame {
     private JPanel contentPanel;
@@ -82,7 +83,7 @@ public class DashboardFrame extends JFrame {
         contentPanel.add(createPlaceholderPanel("Quản lý ngành"), "MAJOR");
         contentPanel.add(createPlaceholderPanel("Quản lý tổ hợp môn"), "COMBINATION");
         contentPanel.add(createPlaceholderPanel("Ngành - tổ hợp"), "MAJOR_COMBINATION");
-        contentPanel.add(createPlaceholderPanel("Điểm thí sinh"), "SCORE");
+        contentPanel.add(new ScoreManagementPanel(), "SCORE");
         contentPanel.add(createPlaceholderPanel("Điểm cộng"), "BONUS");
         contentPanel.add(createPlaceholderPanel("Nguyện vọng / Xét tuyển"), "ASPIRATION");
         contentPanel.add(createPlaceholderPanel("Bảng quy đổi"), "CONVERSION");
