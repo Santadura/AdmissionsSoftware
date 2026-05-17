@@ -17,7 +17,9 @@ import javax.swing.border.EmptyBorder;
 import com.tuyensinh.ui.AppColor;
 import com.tuyensinh.ui.RoundedButton;
 import com.tuyensinh.ui.candidate.CandidateManagementPanel;
+import com.tuyensinh.ui.conversion.ScoreConversionPanel;
 import com.tuyensinh.ui.user.UserManagementPanel;
+import com.tuyensinh.ui.major_combination.MajorCombinationPanel;
 
 public class DashboardFrame extends JFrame {
     private JPanel contentPanel;
@@ -81,12 +83,11 @@ public class DashboardFrame extends JFrame {
         contentPanel.add(new CandidateManagementPanel(), "CANDIDATE");
         contentPanel.add(createPlaceholderPanel("Quản lý ngành"), "MAJOR");
         contentPanel.add(createPlaceholderPanel("Quản lý tổ hợp môn"), "COMBINATION");
-        contentPanel.add(createPlaceholderPanel("Ngành - tổ hợp"), "MAJOR_COMBINATION");
+        contentPanel.add(new MajorCombinationPanel(), "MAJOR_COMBINATION");
         contentPanel.add(createPlaceholderPanel("Điểm thí sinh"), "SCORE");
         contentPanel.add(createPlaceholderPanel("Điểm cộng"), "BONUS");
         contentPanel.add(createPlaceholderPanel("Nguyện vọng / Xét tuyển"), "ASPIRATION");
-        contentPanel.add(createPlaceholderPanel("Bảng quy đổi"), "CONVERSION");
-
+        contentPanel.add(new ScoreConversionPanel(), "CONVERSION");
         String[] cardKeys = {
                 "USER", "CANDIDATE", "MAJOR", "COMBINATION",
                 "MAJOR_COMBINATION", "SCORE", "BONUS", "ASPIRATION", "CONVERSION"
