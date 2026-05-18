@@ -1,6 +1,7 @@
 package com.tuyensinh.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -61,6 +62,7 @@ public class AspirationService {
         List<Aspiration> aspirations = repository.findAll();
         Map<String, BigDecimal> floors = repository.findMajorFloors();
         Map<String, Integer> quotas = repository.findMajorQuotas();
+        Map<String, BigDecimal> bonusTotals = bonusRepository.findBonusTotals();
         List<Aspiration> eligibleAspirations = new ArrayList<>();
 
         int belowFloor = 0;
@@ -68,19 +70,25 @@ public class AspirationService {
         int missingMajorConfig = 0;
 
         for (Aspiration aspiration : aspirations) {
-            BigDecimal bonus = bonusRepository.sumBonus(
+            BigDecimal bonus = resolveBonus(
+                    bonusTotals,
                     aspiration.getCccd(),
                     aspiration.getMaNganh(),
                     aspiration.getToHop(),
                     aspiration.getPhuongThuc());
-            aspiration.setDiemCong(bonus);
-            aspiration.setDiemXetTuyen(totalScore(aspiration));
+            if (bonus != null) {
+                aspiration.setDiemCong(bonus);
+            }
 
             if (aspiration.getDiemThxt() == null) {
                 aspiration.setKetQua("chuaxet");
                 missingScore++;
                 continue;
             }
+
+            aspiration.setDiemCong(zeroIfNull(aspiration.getDiemCong()));
+            aspiration.setDiemUtqd(convertPriority(aspiration.getDiemThxt(), aspiration.getDiemCong()));
+            aspiration.setDiemXetTuyen(totalScore(aspiration));
 
             if (!floors.containsKey(aspiration.getMaNganh()) || !quotas.containsKey(aspiration.getMaNganh())) {
                 aspiration.setKetQua("chuacauhinh");
@@ -189,18 +197,57 @@ public class AspirationService {
         aspiration.setKetQua(clean(aspiration.getKetQua()));
 
         aspiration.setDiemCong(zeroIfNull(aspiration.getDiemCong()));
+        aspiration.setDiemUtqd(convertPriority(aspiration.getDiemThxt(), aspiration.getDiemCong()));
         aspiration.setDiemXetTuyen(totalScore(aspiration));
         aspiration.setNvKeys(aspiration.getCccd() + "_" + aspiration.getMaNganh() + "_"
-                + (aspiration.getPhuongThuc() == null ? "" : aspiration.getPhuongThuc()));
+                + keyPart(aspiration.getPhuongThuc()) + "_" + keyPart(aspiration.getToHop()));
         if (aspiration.getKetQua() == null) {
             aspiration.setKetQua("chuaxet");
         }
     }
 
+    private BigDecimal resolveBonus(
+            Map<String, BigDecimal> bonusTotals,
+            String cccd,
+            String maNganh,
+            String maToHop,
+            String phuongThuc) {
+        BigDecimal total = null;
+        String genericKey = BonusScoreRepository.buildBonusKey(cccd, maNganh, maToHop, null);
+        if (bonusTotals.containsKey(genericKey)) {
+            total = bonusTotals.get(genericKey);
+        }
+        if (hasText(phuongThuc)) {
+            String specificKey = BonusScoreRepository.buildBonusKey(cccd, maNganh, maToHop, phuongThuc);
+            if (bonusTotals.containsKey(specificKey)) {
+                total = (total == null ? BigDecimal.ZERO : total).add(bonusTotals.get(specificKey));
+            }
+        }
+        return total;
+    }
+
     private BigDecimal totalScore(Aspiration aspiration) {
         return zeroIfNull(aspiration.getDiemThxt())
-                .add(zeroIfNull(aspiration.getDiemUtqd()))
-                .add(zeroIfNull(aspiration.getDiemCong()));
+                .add(zeroIfNull(aspiration.getDiemUtqd()));
+    }
+
+    private BigDecimal convertPriority(BigDecimal baseScore, BigDecimal rawBonus) {
+        if (baseScore == null || rawBonus == null || rawBonus.signum() <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        if (baseScore.compareTo(BigDecimal.valueOf(22.5)) < 0) {
+            return rawBonus.setScale(2, RoundingMode.HALF_UP);
+        }
+
+        BigDecimal remaining = BigDecimal.valueOf(30).subtract(baseScore);
+        if (remaining.signum() <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return remaining
+                .multiply(rawBonus)
+                .divide(BigDecimal.valueOf(7.5), 2, RoundingMode.HALF_UP);
     }
 
     private String required(String value, String fieldName) {
@@ -217,6 +264,14 @@ public class AspirationService {
         }
         String cleaned = value.trim();
         return cleaned.isEmpty() ? null : cleaned;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private String keyPart(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private BigDecimal zeroIfNull(BigDecimal value) {

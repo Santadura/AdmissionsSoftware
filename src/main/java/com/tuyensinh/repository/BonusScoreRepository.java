@@ -1,7 +1,9 @@
 package com.tuyensinh.repository;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -36,6 +38,31 @@ public class BonusScoreRepository {
     public BonusScore findById(Integer id) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.get(BonusScore.class, id);
+        }
+    }
+
+    public Map<String, BigDecimal> findBonusTotals() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String sql = """
+                    SELECT ts_cccd,
+                           manganh,
+                           matohop,
+                           COALESCE(NULLIF(TRIM(phuongthuc), ''), '') AS phuongthuc_key,
+                           SUM(COALESCE(diemTong, 0))
+                    FROM xt_diemcongxetuyen
+                    GROUP BY ts_cccd,
+                             manganh,
+                             matohop,
+                             COALESCE(NULLIF(TRIM(phuongthuc), ''), '')
+                    """;
+            List<Object[]> rows = session.createNativeQuery(sql, Object[].class).list();
+            Map<String, BigDecimal> result = new HashMap<>();
+            for (Object[] row : rows) {
+                result.put(
+                        buildBonusKey(row[0], row[1], row[2], row[3]),
+                        row[4] == null ? BigDecimal.ZERO : (BigDecimal) row[4]);
+            }
+            return result;
         }
     }
 
@@ -99,7 +126,7 @@ public class BonusScoreRepository {
                 hql.append(" AND (b.maToHop IS NULL OR b.maToHop = '')");
             }
             if (hasText(phuongThuc)) {
-                hql.append(" AND b.phuongThuc = :phuongThuc");
+                hql.append(" AND (b.phuongThuc = :phuongThuc OR b.phuongThuc IS NULL OR b.phuongThuc = '')");
             } else {
                 hql.append(" AND (b.phuongThuc IS NULL OR b.phuongThuc = '')");
             }
@@ -121,5 +148,13 @@ public class BonusScoreRepository {
 
     private boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
+    }
+
+    public static String buildBonusKey(Object cccd, Object maNganh, Object maToHop, Object phuongThuc) {
+        return keyPart(cccd) + "|" + keyPart(maNganh) + "|" + keyPart(maToHop) + "|" + keyPart(phuongThuc);
+    }
+
+    private static String keyPart(Object value) {
+        return value == null ? "" : value.toString().trim();
     }
 }

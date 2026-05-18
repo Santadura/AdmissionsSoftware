@@ -48,7 +48,7 @@ public class Aspiration {
     @Column(name = "tt_phuongthuc")
     private String phuongThuc;
 
-    @Column(name = "tt_thm")
+    @Column(name = "nv_matohop")
     private String toHop;
 
     public Integer getId() {
