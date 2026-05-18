@@ -4,6 +4,7 @@ com\tuyensinh\ui\candidate\CandidateManagementPanel$3.class
 com\tuyensinh\repository\CandidateRepository.class
 com\tuyensinh\ui\candidate\CandidateImportDialog.class
 com\tuyensinh\service\CandidateService$1.class
+com\tuyensinh\service\ToHopMonService$1.class
 com\tuyensinh\service\CandidateService.class
 com\tuyensinh\App.class
 com\tuyensinh\TestConnection.class
@@ -20,4 +21,5 @@ com\tuyensinh\ui\AppColor.class
 com\tuyensinh\ui\dashboard\DashboardFrame.class
 com\tuyensinh\ui\login\LoginFrame.class
 com\tuyensinh\ui\user\UserManagementPanel.class
+com\tuyensinh\service\NganhService$1.class
 com\tuyensinh\ui\candidate\CandidateManagementPanel$2.class
