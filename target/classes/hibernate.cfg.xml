@@ -16,5 +16,7 @@
         <mapping class="com.tuyensinh.entity.XtNganh"/>
         <mapping class="com.tuyensinh.entity.Candidate"/>
         <mapping class="com.tuyensinh.entity.XtToHopMon"/>
+        <mapping class="com.tuyensinh.entity.BonusScore"/>
+        <mapping class="com.tuyensinh.entity.Aspiration"/>
     </session-factory>
 </hibernate-configuration>
