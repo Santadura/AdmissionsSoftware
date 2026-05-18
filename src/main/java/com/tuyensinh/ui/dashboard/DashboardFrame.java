@@ -23,6 +23,9 @@ import com.tuyensinh.ui.combination.CombinationManagementPanel;
 import com.tuyensinh.ui.major.MajorManagementPanel;
 import com.tuyensinh.ui.user.UserManagementPanel;
 import com.tuyensinh.ui.score.ScoreManagementPanel;
+import com.tuyensinh.ui.conversion.ScoreConversionPanel;
+import com.tuyensinh.ui.user.UserManagementPanel;
+import com.tuyensinh.ui.major_combination.MajorCombinationPanel;
 
 public class DashboardFrame extends JFrame {
     private JPanel contentPanel;
@@ -86,12 +89,11 @@ public class DashboardFrame extends JFrame {
         contentPanel.add(new CandidateManagementPanel(), "CANDIDATE");
         contentPanel.add(new MajorManagementPanel(), "MAJOR");
         contentPanel.add(new CombinationManagementPanel(), "COMBINATION");
-        contentPanel.add(createPlaceholderPanel("Ngành - tổ hợp"), "MAJOR_COMBINATION");
         contentPanel.add(new ScoreManagementPanel(), "SCORE");
         contentPanel.add(new BonusManagementPanel(), "BONUS");
         contentPanel.add(new AspirationManagementPanel(), "ASPIRATION");
-        contentPanel.add(createPlaceholderPanel("Bảng quy đổi"), "CONVERSION");
-
+        contentPanel.add(new MajorCombinationPanel(), "MAJOR_COMBINATION");
+        contentPanel.add(new ScoreConversionPanel(), "CONVERSION");
         String[] cardKeys = {
                 "USER", "CANDIDATE", "MAJOR", "COMBINATION",
                 "MAJOR_COMBINATION", "SCORE", "BONUS", "ASPIRATION", "CONVERSION"

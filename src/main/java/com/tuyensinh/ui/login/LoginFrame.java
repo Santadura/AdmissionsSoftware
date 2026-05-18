@@ -88,6 +88,7 @@ public class LoginFrame extends JFrame {
         txtUsername = new JTextField();
         txtUsername.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         txtUsername.setPreferredSize(new Dimension(260, 38));
+        txtUsername.setText("admin"); 
         txtUsername.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(AppColor.BORDER, 1),
                 new EmptyBorder(6, 10, 6, 10)
@@ -100,6 +101,7 @@ public class LoginFrame extends JFrame {
         txtPassword = new JPasswordField();
         txtPassword.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         txtPassword.setPreferredSize(new Dimension(260, 38));
+        txtPassword.setText("123456");
         txtPassword.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(AppColor.BORDER, 1),
                 new EmptyBorder(6, 10, 6, 10)

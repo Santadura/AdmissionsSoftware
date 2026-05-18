@@ -2,6 +2,7 @@ C:\AdmissionsSoftware\src\main\java\com\tuyensinh\App.java
 C:\AdmissionsSoftware\src\main\java\com\tuyensinh\config\HibernateUtil.java
 C:\AdmissionsSoftware\src\main\java\com\tuyensinh\entity\Candidate.java
 C:\AdmissionsSoftware\src\main\java\com\tuyensinh\entity\User.java
+C:\AdmissionsSoftware\src\main\java\com\tuyensinh\entity\UserRole.java
 C:\AdmissionsSoftware\src\main\java\com\tuyensinh\entity\XtNganh.java
 C:\AdmissionsSoftware\src\main\java\com\tuyensinh\entity\XtToHopMon.java
 C:\AdmissionsSoftware\src\main\java\com\tuyensinh\repository\CandidateRepository.java
