@@ -12,8 +12,14 @@
        <property name="hibernate.show_sql">true</property>
        <property name="hibernate.format_sql">true</property>
        <property name="hibernate.hbm2ddl.auto">validate</property>
-        
+
+        <mapping class="com.tuyensinh.entity.User"/>
         <mapping class="com.tuyensinh.entity.XtNganh"/>
         <mapping class="com.tuyensinh.entity.Candidate"/>
+        <mapping class="com.tuyensinh.entity.XtToHopMon"/>
+        <mapping class="com.tuyensinh.entity.BonusScore"/>
+        <mapping class="com.tuyensinh.entity.Aspiration"/>
+        <mapping class="com.tuyensinh.entity.MajorCombination"/>
+        <mapping class="com.tuyensinh.entity.ScoreConversion"/>
     </session-factory>
 </hibernate-configuration>
