@@ -63,8 +63,8 @@ public class BonusManagementPanel extends JPanel {
 
         txtSearch = new JTextField(24);
         txtSearch.setPreferredSize(new Dimension(260, 35));
-        JButton btnSearch = new RoundedButton("Tim kiem", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
-        JButton btnRefresh = new RoundedButton("Lam moi", new Color(100, 150, 200), new Color(70, 120, 170));
+        JButton btnSearch = new RoundedButton("Tìm kiếm", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
+        JButton btnRefresh = new RoundedButton("Làm mới", new Color(100, 150, 200), new Color(70, 120, 170));
 
         btnSearch.addActionListener(e -> loadData());
         txtSearch.addActionListener(e -> loadData());
@@ -118,9 +118,9 @@ public class BonusManagementPanel extends JPanel {
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         actionPanel.setOpaque(false);
 
-        JButton btnAdd = new RoundedButton("Them", new Color(67, 160, 71), new Color(46, 125, 50));
-        JButton btnEdit = new RoundedButton("Sua", new Color(251, 140, 0), new Color(239, 108, 0));
-        JButton btnDelete = new RoundedButton("Xoa", new Color(211, 47, 47), new Color(183, 28, 28));
+        JButton btnAdd = new RoundedButton("Thêm", new Color(67, 160, 71), new Color(46, 125, 50));
+        JButton btnEdit = new RoundedButton("Sửa", new Color(251, 140, 0), new Color(239, 108, 0));
+        JButton btnDelete = new RoundedButton("Xóa", new Color(211, 47, 47), new Color(183, 28, 28));
 
         btnAdd.addActionListener(e -> openFormDialog(null));
         btnEdit.addActionListener(e -> editSelected());
@@ -250,8 +250,8 @@ public class BonusManagementPanel extends JPanel {
         formPanel.add(new JLabel("Bo trong diem tong de tu cong CC + UTXT."));
 
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnSave = new RoundedButton("Luu", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
-        JButton btnCancel = new RoundedButton("Huy", Color.GRAY, Color.DARK_GRAY);
+        JButton btnSave = new RoundedButton("Lưu", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
+        JButton btnCancel = new RoundedButton("Hủy", Color.GRAY, Color.DARK_GRAY);
 
         btnSave.addActionListener(e -> {
             try {
