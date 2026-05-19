@@ -24,7 +24,7 @@ public class TestConnection {
             BonusScoreRepository bonusRepository = new BonusScoreRepository();
             AspirationRepository aspirationRepository = new AspirationRepository();
             System.out.println("So diem cong: " + bonusRepository.findAll("").size());
-            System.out.println("So nguyen vong: " + aspirationRepository.findAll("").size());
+            System.out.println("So nguyen vong: " + aspirationRepository.findAll().size());
             System.out.println("So nganh co diem san: " + aspirationRepository.findMajorFloors().size());
             System.out.println("So nganh co chi tieu: " + aspirationRepository.findMajorQuotas().size());
 

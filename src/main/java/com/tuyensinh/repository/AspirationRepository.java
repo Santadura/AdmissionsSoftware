@@ -13,26 +13,60 @@ import com.tuyensinh.entity.Aspiration;
 
 public class AspirationRepository {
 
-    public List<Aspiration> findAll(String searchTerm) {
+    public List<Object[]> findAllWithCandidate(String searchTerm) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            if (searchTerm == null || searchTerm.trim().isEmpty()) {
-                return session.createQuery("FROM Aspiration a ORDER BY a.id", Aspiration.class).list();
-            }
-
-            String term = "%" + searchTerm.trim().toLowerCase() + "%";
             String hql = """
+                    SELECT a, c.ho, c.ten
                     FROM Aspiration a
+                    LEFT JOIN Candidate c ON a.cccd = cast(c.idthisinh as string)
+                    """;
+            
+            if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+                String term = "%" + searchTerm.trim().toLowerCase() + "%";
+                hql += """
                     WHERE lower(a.cccd) LIKE :term
                        OR lower(a.maNganh) LIKE :term
                        OR lower(a.phuongThuc) LIKE :term
                        OR lower(a.toHop) LIKE :term
                        OR lower(a.ketQua) LIKE :term
-                       OR lower(a.nvKeys) LIKE :term
-                    ORDER BY a.id
+                       OR lower(c.ho) LIKE :term
+                       OR lower(c.ten) LIKE :term
+                       OR lower(a.hoTen) LIKE :term
                     """;
-            return session.createQuery(hql, Aspiration.class)
-                    .setParameter("term", term)
-                    .list();
+                hql += " ORDER BY a.id";
+                return session.createQuery(hql, Object[].class)
+                        .setParameter("term", term)
+                        .list();
+            }
+            
+            hql += " ORDER BY a.id";
+            return session.createQuery(hql, Object[].class).list();
+        }
+    }
+
+    public List<Object[]> findAllSuccessfulWithCandidate() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = """
+                    SELECT a.maNganh, a.cccd, c.ho, c.ten, a.toHop, a.diemThxt, a.diemUtqd, a.diemCong, a.diemXetTuyen, a.phuongThuc, a.thuTu, a.hoTen
+                    FROM Aspiration a
+                    LEFT JOIN Candidate c ON a.cccd = cast(c.idthisinh as string)
+                    WHERE a.ketQua = 'trungtuyen'
+                    ORDER BY a.maNganh, a.diemXetTuyen DESC
+                    """;
+            return session.createQuery(hql, Object[].class).list();
+        }
+    }
+
+    public List<Object[]> countSuccessfulByMethodAndMajor() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = """
+                    SELECT a.maNganh, a.phuongThuc, COUNT(a.id)
+                    FROM Aspiration a
+                    WHERE a.ketQua = 'trungtuyen'
+                    GROUP BY a.maNganh, a.phuongThuc
+                    ORDER BY a.maNganh, a.phuongThuc
+                    """;
+            return session.createQuery(hql, Object[].class).list();
         }
     }
 
@@ -131,6 +165,20 @@ public class AspirationRepository {
             for (Object[] row : rows) {
                 if (row[0] != null && row[1] != null) {
                     result.put(row[0].toString(), ((Number) row[1]).intValue());
+                }
+            }
+            return result;
+        }
+    }
+
+    public Map<String, String> findMajorRootCombinations() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            List<Object[]> rows = session.createNativeQuery(
+                    "SELECT manganh, n_tohopgoc FROM xt_nganh", Object[].class).list();
+            Map<String, String> result = new HashMap<>();
+            for (Object[] row : rows) {
+                if (row[0] != null && row[1] != null) {
+                    result.put(row[0].toString(), row[1].toString());
                 }
             }
             return result;

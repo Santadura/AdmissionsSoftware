@@ -41,14 +41,15 @@ public class BonusScoreRepository {
         }
     }
 
-    public Map<String, BigDecimal> findBonusTotals() {
+    public Map<String, BigDecimal[]> findBonusTotals() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             String sql = """
                     SELECT ts_cccd,
                            manganh,
                            matohop,
                            COALESCE(NULLIF(TRIM(phuongthuc), ''), '') AS phuongthuc_key,
-                           SUM(COALESCE(diemTong, 0))
+                           SUM(COALESCE(diemCC, 0)),
+                           SUM(COALESCE(diemUtxt, 0))
                     FROM xt_diemcongxetuyen
                     GROUP BY ts_cccd,
                              manganh,
@@ -56,11 +57,14 @@ public class BonusScoreRepository {
                              COALESCE(NULLIF(TRIM(phuongthuc), ''), '')
                     """;
             List<Object[]> rows = session.createNativeQuery(sql, Object[].class).list();
-            Map<String, BigDecimal> result = new HashMap<>();
+            Map<String, BigDecimal[]> result = new HashMap<>();
             for (Object[] row : rows) {
                 result.put(
                         buildBonusKey(row[0], row[1], row[2], row[3]),
-                        row[4] == null ? BigDecimal.ZERO : (BigDecimal) row[4]);
+                        new BigDecimal[]{
+                            row[4] == null ? BigDecimal.ZERO : (BigDecimal) row[4],
+                            row[5] == null ? BigDecimal.ZERO : (BigDecimal) row[5]
+                        });
             }
             return result;
         }
