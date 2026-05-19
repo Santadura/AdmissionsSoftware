@@ -50,7 +50,7 @@ public class BonusManagementPanel extends JPanel {
         JPanel topPanel = new JPanel(new BorderLayout(10, 10));
         topPanel.setOpaque(false);
 
-        JLabel lblTitle = new JLabel("Quan ly diem cong");
+        JLabel lblTitle = new JLabel("Quản lý điểm cộng");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 30));
         lblTitle.setForeground(AppColor.TEXT_PRIMARY);
         topPanel.add(lblTitle, BorderLayout.NORTH);
@@ -73,7 +73,7 @@ public class BonusManagementPanel extends JPanel {
             loadData();
         });
 
-        searchPanel.add(new JLabel("CCCD / ma nganh / to hop / phuong thuc:"));
+        searchPanel.add(new JLabel("CCCD / mã ngành / tổ hợp / phương thức:"));
         searchPanel.add(txtSearch);
         searchPanel.add(btnSearch);
         searchPanel.add(btnRefresh);
@@ -82,8 +82,8 @@ public class BonusManagementPanel extends JPanel {
         add(topPanel, BorderLayout.NORTH);
 
         String[] columns = {
-                "ID", "CCCD", "Ma nganh", "To hop", "Phuong thuc",
-                "Diem CC", "Diem UTXT", "Diem tong", "Ghi chu", "Key"
+                "ID", "CCCD", "Mã ngành", "Tổ hợp", "Phương thức",
+                "Điểm CC", "Điểm UTXT", "Điểm tổng", "Ghi chú", "Key"
         };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
@@ -162,13 +162,13 @@ public class BonusManagementPanel extends JPanel {
     private void editSelected() {
         Integer id = getSelectedId();
         if (id == null) {
-            JOptionPane.showMessageDialog(this, "Vui long chon mot dong de sua.");
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng để sửa.");
             return;
         }
 
         BonusScore bonusScore = service.getById(id);
         if (bonusScore == null) {
-            JOptionPane.showMessageDialog(this, "Khong tim thay diem cong.");
+            JOptionPane.showMessageDialog(this, "Không tìm thấy điểm cộng.");
             return;
         }
         openFormDialog(bonusScore);
@@ -177,14 +177,14 @@ public class BonusManagementPanel extends JPanel {
     private void deleteSelected() {
         Integer id = getSelectedId();
         if (id == null) {
-            JOptionPane.showMessageDialog(this, "Vui long chon mot dong de xoa.");
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng để xóa.");
             return;
         }
 
         int confirm = JOptionPane.showConfirmDialog(
-                this,
-                "Xoa diem cong da chon?",
-                "Xac nhan",
+            this,
+            "Xóa điểm cộng đã chọn?",
+            "Xác nhận",
                 JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) {
             return;
@@ -193,9 +193,9 @@ public class BonusManagementPanel extends JPanel {
         try {
             service.deleteBonusScore(id);
             loadData();
-            JOptionPane.showMessageDialog(this, "Da xoa diem cong.");
+            JOptionPane.showMessageDialog(this, "Đã xóa điểm cộng.");
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Loi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -211,7 +211,7 @@ public class BonusManagementPanel extends JPanel {
         boolean editMode = current != null;
         JDialog dialog = new JDialog(
                 SwingUtilities.getWindowAncestor(this),
-                editMode ? "Sua diem cong" : "Them diem cong",
+            editMode ? "Sửa điểm cộng" : "Thêm điểm cộng",
                 Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setSize(520, 420);
         dialog.setLocationRelativeTo(this);
@@ -232,22 +232,22 @@ public class BonusManagementPanel extends JPanel {
 
         formPanel.add(new JLabel("CCCD:"));
         formPanel.add(txtCccd);
-        formPanel.add(new JLabel("Ma nganh:"));
+        formPanel.add(new JLabel("Mã ngành:"));
         formPanel.add(txtMaNganh);
-        formPanel.add(new JLabel("Ma to hop:"));
+        formPanel.add(new JLabel("Mã tổ hợp:"));
         formPanel.add(txtMaToHop);
-        formPanel.add(new JLabel("Phuong thuc:"));
+        formPanel.add(new JLabel("Phương thức:"));
         formPanel.add(txtPhuongThuc);
-        formPanel.add(new JLabel("Diem cong chung:"));
+        formPanel.add(new JLabel("Điểm cộng chung:"));
         formPanel.add(txtDiemCc);
-        formPanel.add(new JLabel("Diem UTXT:"));
+        formPanel.add(new JLabel("Điểm UTXT:"));
         formPanel.add(txtDiemUtxt);
-        formPanel.add(new JLabel("Diem tong:"));
+        formPanel.add(new JLabel("Điểm tổng:"));
         formPanel.add(txtDiemTong);
-        formPanel.add(new JLabel("Ghi chu:"));
+        formPanel.add(new JLabel("Ghi chú:"));
         formPanel.add(txtGhiChu);
         formPanel.add(new JLabel(""));
-        formPanel.add(new JLabel("Bo trong diem tong de tu cong CC + UTXT."));
+        formPanel.add(new JLabel("Bỏ trong điểm tổng để tự cộng CC + UTXT."));
 
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton btnSave = new RoundedButton("Lưu", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
@@ -274,7 +274,7 @@ public class BonusManagementPanel extends JPanel {
                 loadData();
                 dialog.dispose();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialog, ex.getMessage(), "Loi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         });
         btnCancel.addActionListener(e -> dialog.dispose());
