@@ -12,10 +12,8 @@ public class CandidateExportService {
 
     public void exportToExcel(File file, List<Candidate> candidates) throws Exception {
         try (Workbook workbook = new XSSFWorkbook()) {
-            // Đặt tên sheet giống file input
             Sheet sheet = workbook.createSheet("Sheet1");
 
-            // Tạo header GIỐNG HỆT file dsthisinh1.xlsx
             Row header = sheet.createRow(0);
             String[] columns = {
                 "STT", "CCCD", "Họ Tên", "Ngày sinh", "Giới tính",
@@ -33,39 +31,58 @@ public class CandidateExportService {
                 cell.setCellStyle(headerStyle);
             }
 
-            // Đổ dữ liệu
             int rowNum = 1;
             for (Candidate c : candidates) {
                 Row row = sheet.createRow(rowNum);
                 
-                row.createCell(0).setCellValue(rowNum);  // STT
+                row.createCell(0).setCellValue(rowNum);
                 row.createCell(1).setCellValue(c.getCccd() != null ? c.getCccd() : "");
                 row.createCell(2).setCellValue(c.getHoTen());
-                row.createCell(3).setCellValue(c.getNgaySinh() != null ? c.getNgaySinh() : "");
+                
+                String ngaySinhExport = convertToExportDateFormat(c.getNgaySinh());
+                row.createCell(3).setCellValue(ngaySinhExport);
+                
                 row.createCell(4).setCellValue(c.getGioiTinh() != null ? c.getGioiTinh() : "");
                 row.createCell(5).setCellValue(c.getDoiTuong() != null ? c.getDoiTuong() : "");
                 row.createCell(6).setCellValue(c.getKhuVuc() != null ? c.getKhuVuc() : "");
                 
-                // Các cột điểm (7 đến 35) để trống - có thể lấy từ bảng điểm sau
-                for (int i = 7; i <= 35; i++) {
+                for (int i = 7; i < 35; i++) {
                     row.createCell(i).setCellValue("");
                 }
                 
+                row.createCell(35).setCellValue("");
                 row.createCell(36).setCellValue(c.getNoiSinh() != null ? c.getNoiSinh() : "");
                 
                 rowNum++;
             }
 
-            // Auto resize các cột
-            for (int i = 0; i < columns.length; i++) {
+            for (int i = 0; i < 37; i++) {
                 sheet.autoSizeColumn(i);
             }
 
-            // Ghi ra file
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 workbook.write(fos);
             }
         }
+    }
+
+    private String convertToExportDateFormat(String ngaySinhDB) {
+        if (ngaySinhDB == null || ngaySinhDB.isEmpty()) {
+            return "";
+        }
+        
+        try {
+            String[] parts = ngaySinhDB.trim().split("-");
+            if (parts.length == 3) {
+                String nam = parts[0];
+                String thang = parts[1];
+                String ngay = parts[2];
+                return ngay + "/" + thang + "/" + nam;
+            }
+        } catch (Exception e) {
+        }
+        
+        return ngaySinhDB;
     }
 
     private CellStyle getHeaderStyle(Workbook workbook) {

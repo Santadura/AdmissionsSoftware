@@ -53,12 +53,23 @@ public class CandidateService {
                         }
                     }
                     
-                    candidate.setNgaySinh(getCellStringValue(row, 3));
+                    String ngaySinhExcel = getCellStringValue(row, 3);
+                    String ngaySinhChuan = convertToStandardDateFormat(ngaySinhExcel);
+                    candidate.setNgaySinh(ngaySinhChuan);
+                    
                     candidate.setGioiTinh(getCellStringValue(row, 4));
                     candidate.setDoiTuong(getCellStringValue(row, 5));
                     candidate.setKhuVuc(getCellStringValue(row, 6));
                     candidate.setNoiSinh(getCellStringValue(row, 35));
                     candidate.setSobaodanh(candidate.getCccd());
+                    
+                    candidate.setDienThoai("0123456789");
+                    
+                    String emailCccd = candidate.getCccd().toLowerCase().replace("_", "");
+                    candidate.setEmail(emailCccd + "@sgu.edu.vn");
+                    
+                    String password = generatePasswordFromStandardDate(ngaySinhChuan);
+                    candidate.setPassword(password);
                     
                     if (candidate.getCccd() == null || candidate.getCccd().trim().isEmpty()) {
                         errors.add("Dòng " + rowNum + ": CCCD trống, bỏ qua");
@@ -84,6 +95,44 @@ public class CandidateService {
         }
         
         return new ImportResult(successCount, errors);
+    }
+    
+    private String convertToStandardDateFormat(String ngaySinhExcel) {
+        if (ngaySinhExcel == null || ngaySinhExcel.isEmpty()) {
+            return null;
+        }
+        
+        try {
+            String[] parts = ngaySinhExcel.trim().split("/");
+            if (parts.length == 3) {
+                String ngay = parts[0];
+                String thang = parts[1];
+                String nam = parts[2];
+                return nam + "-" + thang + "-" + ngay;
+            }
+        } catch (Exception e) {
+        }
+        
+        return ngaySinhExcel;
+    }
+    
+    private String generatePasswordFromStandardDate(String ngaySinhChuan) {
+        if (ngaySinhChuan == null || ngaySinhChuan.isEmpty()) {
+            return "01012000";
+        }
+        
+        try {
+            String[] parts = ngaySinhChuan.trim().split("-");
+            if (parts.length == 3) {
+                String nam = parts[0];
+                String thang = parts[1];
+                String ngay = parts[2];
+                return ngay + thang + nam;
+            }
+        } catch (Exception e) {
+        }
+        
+        return "01012000";
     }
     
     public List<Candidate> getCandidates(int page) {
@@ -126,6 +175,9 @@ public class CandidateService {
                 String val = cell.getStringCellValue().trim();
                 return val.isEmpty() ? null : val;
             case NUMERIC:
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    return cell.getLocalDateTimeCellValue().toLocalDate().toString();
+                }
                 double numVal = cell.getNumericCellValue();
                 if (numVal == Math.floor(numVal) && !Double.isInfinite(numVal)) {
                     return String.valueOf((long) numVal);
