@@ -10,6 +10,7 @@ import org.hibernate.Transaction;
 
 import com.tuyensinh.config.HibernateUtil;
 import com.tuyensinh.entity.Aspiration;
+import com.tuyensinh.entity.Candidate;
 
 public class AspirationRepository {
 
