@@ -14,11 +14,13 @@ public class CandidateScoreRepository {
 
     public void save(CandidateScore score) {
 
+        Session session = null;
         Transaction transaction = null;
 
-        try (Session session = HibernateUtil
-                .getSessionFactory()
-                .openSession()) {
+        try {
+            session = HibernateUtil
+                    .getSessionFactory()
+                    .openSession();
 
             transaction = session.beginTransaction();
 
@@ -28,13 +30,40 @@ public class CandidateScoreRepository {
 
         } catch (Exception e) {
 
-            if (transaction != null) {
+            if (transaction != null && transaction.isActive()) {
                 transaction.rollback();
             }
 
             throw new RuntimeException(
-                    "Lỗi thêm điểm: " + e.getMessage()
+                    "Lỗi thêm điểm: " + e.getMessage(),
+                    e
             );
+
+        } finally {
+
+            if (session != null && session.isOpen()) {
+                session.close();
+            }
+        }
+    }
+
+    public boolean existsByCccdAndLoai(String cccd, String loai) {
+
+        try (Session session = HibernateUtil
+                .getSessionFactory()
+                .openSession()) {
+
+            Query<Long> query = session.createQuery(
+                    "SELECT COUNT(*) FROM CandidateScore " +
+                            "WHERE cccd = :cccd " +
+                            "AND dPhuongthuc = :loai",
+                    Long.class
+            );
+
+            query.setParameter("cccd", cccd);
+            query.setParameter("loai", loai);
+
+            return query.uniqueResult() > 0;
         }
     }
 
@@ -42,27 +71,36 @@ public class CandidateScoreRepository {
 
     public void update(CandidateScore score) {
 
+        Session session = null;
         Transaction transaction = null;
 
-        try (Session session = HibernateUtil
-                .getSessionFactory()
-                .openSession()) {
+        try {
+            session = HibernateUtil
+                    .getSessionFactory()
+                    .openSession();
 
             transaction = session.beginTransaction();
 
-            session.update(score);
+            session.merge(score);
 
             transaction.commit();
 
         } catch (Exception e) {
 
-            if (transaction != null) {
+            if (transaction != null && transaction.isActive()) {
                 transaction.rollback();
             }
 
             throw new RuntimeException(
-                    "Lỗi cập nhật điểm: " + e.getMessage()
+                    "Lỗi cập nhật điểm: " + e.getMessage(),
+                    e
             );
+
+        } finally {
+
+            if (session != null && session.isOpen()) {
+                session.close();
+            }
         }
     }
 
@@ -70,11 +108,13 @@ public class CandidateScoreRepository {
 
     public void delete(Integer id) {
 
+        Session session = null;
         Transaction transaction = null;
 
-        try (Session session = HibernateUtil
-                .getSessionFactory()
-                .openSession()) {
+        try {
+            session = HibernateUtil
+                    .getSessionFactory()
+                    .openSession();
 
             transaction = session.beginTransaction();
 
@@ -84,20 +124,27 @@ public class CandidateScoreRepository {
             );
 
             if (score != null) {
-                session.delete(score);
+                session.remove(score);
             }
 
             transaction.commit();
 
         } catch (Exception e) {
 
-            if (transaction != null) {
+            if (transaction != null && transaction.isActive()) {
                 transaction.rollback();
             }
 
             throw new RuntimeException(
-                    "Lỗi xóa điểm: " + e.getMessage()
+                    "Lỗi xóa điểm: " + e.getMessage(),
+                    e
             );
+
+        } finally {
+
+            if (session != null && session.isOpen()) {
+                session.close();
+            }
         }
     }
 

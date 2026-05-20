@@ -15,6 +15,43 @@ public class CandidateScoreService {
 
     private final CandidateScoreRepository repository;
 
+    public String toLoaiCode(String loaiText) {
+
+        if (loaiText == null) {
+            return null;
+        }
+
+        switch (loaiText) {
+            case "THPT":
+                return "3";
+            case "DGNL":
+            case "ĐGNL":
+                return "4";
+            case "VSAT":
+                return "5";
+            default:
+                return loaiText;
+        }
+    }
+
+    public String toLoaiText(String loaiCode) {
+
+        if (loaiCode == null) {
+            return "";
+        }
+
+        switch (loaiCode) {
+            case "3":
+                return "THPT";
+            case "4":
+                return "DGNL";
+            case "5":
+                return "VSAT";
+            default:
+                return loaiCode;
+        }
+    }
+
     public CandidateScoreService() {
         repository = new CandidateScoreRepository();
     }
@@ -42,7 +79,7 @@ public class CandidateScoreService {
 
                 CandidateScore score = new CandidateScore();
 
-                score.setDPhuongthuc(loaiDiem);
+                score.setDPhuongthuc(toLoaiCode(loaiDiem));
 
                 score.setCccd(getString(row, 0));
                 score.setSobaodanh(getString(row, 1));
@@ -147,7 +184,7 @@ public class CandidateScoreService {
                 continue;
             }
 
-            map.putIfAbsent(loai, new StatisticAccumulator(loai, mon));
+            map.putIfAbsent(loai, new StatisticAccumulator(toLoaiText(loai), mon));
             map.get(loai).add(value);
         }
 
@@ -169,10 +206,12 @@ public class CandidateScoreService {
 
         for (CandidateScore score : scores) {
 
+            String loaiCode = toLoaiCode(loaiDiem);
+
             if (!"Tất cả".equalsIgnoreCase(loaiDiem)) {
 
                 if (score.getDPhuongthuc() == null ||
-                        !score.getDPhuongthuc().equalsIgnoreCase(loaiDiem)) {
+                        !score.getDPhuongthuc().equalsIgnoreCase(loaiCode)) {
                     continue;
                 }
             }
@@ -186,7 +225,9 @@ public class CandidateScoreService {
                 }
 
                 map.putIfAbsent(mon, new StatisticAccumulator(
-                        score.getDPhuongthuc(),
+                        "Tất cả".equalsIgnoreCase(loaiDiem)
+                                ? "Tất cả"
+                                : toLoaiText(score.getDPhuongthuc()),
                         mon
                 ));
 
@@ -377,5 +418,12 @@ public class CandidateScoreService {
                     max
             );
         }
+    }
+    public boolean existsByCccdAndLoai(String cccd, String loaiText) {
+
+        return repository.existsByCccdAndLoai(
+                cccd,
+                toLoaiCode(loaiText)
+        );
     }
 }

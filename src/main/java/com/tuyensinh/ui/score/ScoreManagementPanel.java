@@ -229,7 +229,8 @@ public class ScoreManagementPanel extends JPanel {
 
         String keyword = txtSearch.getText().trim().toLowerCase();
 
-        String loai = cboLoai.getSelectedItem().toString();
+        String loaiText = cboLoai.getSelectedItem().toString();
+        String loaiCode = service.toLoaiCode(loaiText);
 
         for (CandidateScore s : scores) {
 
@@ -239,8 +240,8 @@ public class ScoreManagementPanel extends JPanel {
                             || (s.getSobaodanh() != null && s.getSobaodanh().toLowerCase().contains(keyword));
 
             boolean matchLoai =
-                    loai.equals("Tất cả")
-                            || loai.equalsIgnoreCase(s.getDPhuongthuc());
+                    loaiText.equals("Tất cả")
+                            || loaiCode.equalsIgnoreCase(s.getDPhuongthuc());
 
             if (matchKeyword && matchLoai) {
 
@@ -248,7 +249,7 @@ public class ScoreManagementPanel extends JPanel {
                         s.getIddiemthi(),
                         s.getCccd(),
                         s.getSobaodanh(),
-                        s.getDPhuongthuc(),
+                        service.toLoaiText(s.getDPhuongthuc()),
                         s.getTo(),
                         s.getLi(),
                         s.getHo(),

@@ -145,4 +145,8 @@ public class CandidateService {
             this.errors = errors;
         }
     }
+
+    public boolean existsByCccdOrSbd(String cccd, String sobaodanh) {
+        return repository.existsByCccdOrSbd(cccd, sobaodanh);
+    }
 }
