@@ -45,7 +45,7 @@ public class MajorCombination {
     @Column(name = "N1", columnDefinition = "tinyint(1)")
     private boolean n1;
 
-    @Column(name = "TO", columnDefinition = "tinyint(1)")
+    @Column(name = "`TO`", columnDefinition = "tinyint(1)")
     private boolean toan;
 
     @Column(name = "LI", columnDefinition = "tinyint(1)")

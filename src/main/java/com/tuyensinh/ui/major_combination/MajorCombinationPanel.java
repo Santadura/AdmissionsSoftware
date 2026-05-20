@@ -9,8 +9,8 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
-import javax.swing.table.TableColumn;
 import java.awt.*;
+import java.io.File;
 import java.util.List;
 
 public class MajorCombinationPanel extends JPanel {
@@ -18,7 +18,7 @@ public class MajorCombinationPanel extends JPanel {
     private JTable tableCombinations;
     private DefaultTableModel tableModel;
     private JTextField txtSearch;
-    private JButton btnSearch, btnRefresh;
+    private JButton btnSearch, btnRefresh, btnImport; 
     
     private MajorCombinationService service;
     private String currentSearchTerm = "";
@@ -34,7 +34,6 @@ public class MajorCombinationPanel extends JPanel {
         setBackground(AppColor.BACKGROUND);
         setBorder(new EmptyBorder(20, 20, 20, 20));
         
-        // TOP PANEL 
         JPanel topPanel = new JPanel(new BorderLayout(10, 10));
         topPanel.setOpaque(false);
         
@@ -43,6 +42,9 @@ public class MajorCombinationPanel extends JPanel {
         lblTitle.setForeground(AppColor.TEXT_PRIMARY);
         topPanel.add(lblTitle, BorderLayout.NORTH);
         
+        JPanel toolBar = new JPanel(new BorderLayout());
+        toolBar.setOpaque(false);
+
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         searchPanel.setBackground(AppColor.SURFACE);
         searchPanel.setBorder(BorderFactory.createLineBorder(AppColor.BORDER));
@@ -59,9 +61,17 @@ public class MajorCombinationPanel extends JPanel {
         searchPanel.add(btnSearch);
         searchPanel.add(btnRefresh);
 
-        topPanel.add(searchPanel, BorderLayout.SOUTH);
+        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        actionPanel.setOpaque(false);
         
-        //  CENTER PANEL (Table)
+        btnImport = new RoundedButton("Import Excel", new Color(67, 160, 71), new Color(46, 125, 50));
+        actionPanel.add(btnImport);
+
+        toolBar.add(searchPanel, BorderLayout.EAST);
+        toolBar.add(actionPanel, BorderLayout.WEST);
+        topPanel.add(toolBar, BorderLayout.SOUTH);
+        
+        // --- CENTER PANEL (Table) ---
         String[] columns = {
             "ID", "Mã ngành", "Mã tổ hợp", "Môn 1", "HS 1", "Môn 2", "HS 2", "Môn 3", "HS 3", "TB Keys",
             "N1", "TO", "LI", "HO", "SI", "VA", "SU", "DI", "TI", "KHAC", "KTPL", "Độ lệch"
@@ -73,9 +83,7 @@ public class MajorCombinationPanel extends JPanel {
             
             @Override
             public Class<?> getColumnClass(int columnIndex) {
-                if (columnIndex >= 10 && columnIndex <= 20) {
-                    return Boolean.class;
-                }
+                if (columnIndex >= 10 && columnIndex <= 20) return Boolean.class;
                 return super.getColumnClass(columnIndex);
             }
         };
@@ -113,14 +121,10 @@ public class MajorCombinationPanel extends JPanel {
     }
     
     private void setColumnWidths() {
-        int[] widths = {
-            50, 100, 100, 60, 50, 60, 50, 60, 50, 140, 
-            45, 45, 45, 45, 45, 45, 45, 45, 45, 55, 55, 80 
-        };
+        int[] widths = { 50, 100, 100, 60, 50, 60, 50, 60, 50, 140, 45, 45, 45, 45, 45, 45, 45, 45, 45, 55, 55, 80 };
         for (int i = 0; i < widths.length; i++) {
             if (i < tableCombinations.getColumnCount()) {
-                TableColumn column = tableCombinations.getColumnModel().getColumn(i);
-                column.setPreferredWidth(widths[i]);
+                tableCombinations.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
             }
         }
     }
@@ -130,35 +134,66 @@ public class MajorCombinationPanel extends JPanel {
             currentSearchTerm = txtSearch.getText().trim();
             loadData();
         });
-
         txtSearch.addActionListener(e -> btnSearch.doClick());
-
-        btnRefresh.addActionListener(e -> {
-            txtSearch.setText("");
-            currentSearchTerm = "";
-            loadData();
+        btnRefresh.addActionListener(e -> { txtSearch.setText(""); currentSearchTerm = ""; loadData(); });
+        
+        // Sự kiện Import
+        btnImport.addActionListener(e -> importExcel());
+    }
+    
+    private void importExcel() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Chọn file Excel Ngành - Tổ hợp");
+        
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
+            public boolean accept(File f) { return f.getName().endsWith(".xlsx") || f.isDirectory(); }
+            public String getDescription() { return "Excel files (*.xlsx)"; }
         });
+        
+        int userSelection = fileChooser.showOpenDialog(this);
+        
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            
+            SwingWorker<MajorCombinationService.ImportResult, Void> worker = new SwingWorker<>() {
+                @Override
+                protected MajorCombinationService.ImportResult doInBackground() throws Exception {
+                    return service.importFromExcel(file);
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        MajorCombinationService.ImportResult r = get();
+                        String msg = "Import thành công " + r.successCount + " tổ hợp!";
+                        
+                        if (!r.errors.isEmpty()) {
+                            msg += "\n\nCảnh báo/Lỗi dữ liệu:\n" + String.join("\n", r.errors.subList(0, Math.min(5, r.errors.size())));
+                            if (r.errors.size() > 5) {
+                                msg += "\n... và " + (r.errors.size() - 5) + " lỗi khác.";
+                            }
+                        }
+                        
+                        JOptionPane.showMessageDialog(MajorCombinationPanel.this, msg, "Kết quả Import", JOptionPane.INFORMATION_MESSAGE);
+                        loadData(); 
+                        
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(MajorCombinationPanel.this, "Lỗi khi import file: " + ex.getMessage(), "Lỗi Nghiêm Trọng", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            };
+            
+            worker.execute();
+        }
     }
     
     private void loadData() {
         tableModel.setRowCount(0);
-
-        List<MajorCombination> list = currentSearchTerm.isEmpty() ? 
-            service.getAll() : 
-            service.search(currentSearchTerm);
-            
+        List<MajorCombination> list = currentSearchTerm.isEmpty() ? service.getAll() : service.search(currentSearchTerm);
         for (MajorCombination mc : list) {
             tableModel.addRow(new Object[]{
-                mc.getId(),
-                mc.getMaNganh(),
-                mc.getMaToHop(),
-                mc.getThMon1(),
-                mc.getHsMon1(),
-                mc.getThMon2(),
-                mc.getHsMon2(),
-                mc.getThMon3(),
-                mc.getHsMon3(),
-                mc.getTbKeys(),
+                mc.getId(), mc.getMaNganh(), mc.getMaToHop(), mc.getThMon1(), mc.getHsMon1(), 
+                mc.getThMon2(), mc.getHsMon2(), mc.getThMon3(), mc.getHsMon3(), mc.getTbKeys(),
                 mc.isN1(), mc.isToan(), mc.isLy(), mc.isHoa(), mc.isSinh(),
                 mc.isVan(), mc.isSu(), mc.isDia(), mc.isTiengAnh(), mc.isKhac(), mc.isKtpl(),
                 mc.getDoLech()

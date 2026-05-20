@@ -16,6 +16,7 @@ public class AspirationService {
 
     private final AspirationRepository repository;
     private final BonusScoreRepository bonusRepository;
+    private final com.tuyensinh.repository.NganhRepository nganhRepository = new com.tuyensinh.repository.NganhRepository();
 
     public AspirationService() {
         this.repository = new AspirationRepository();
@@ -182,6 +183,20 @@ public class AspirationService {
 
         if (saveResult) {
             repository.saveAll(aspirations);
+            
+            for (Map.Entry<String, List<Aspiration>> entry : currentAdmitted.entrySet()) {
+                String maNganh = entry.getKey();
+                List<Aspiration> admittedList = entry.getValue();
+                
+                if (!admittedList.isEmpty()) {
+                    Aspiration lastAdmitted = admittedList.get(admittedList.size() - 1);
+                    BigDecimal diemChuan = lastAdmitted.getDiemXetTuyen();
+                    
+                    nganhRepository.updateDiemChuan(maNganh, diemChuan);
+                } else {
+
+                }
+            }
         }
         return new AdmissionResult(aspirations.size(), passed, failed, belowFloor, missingScore, missingMajorConfig);
     }

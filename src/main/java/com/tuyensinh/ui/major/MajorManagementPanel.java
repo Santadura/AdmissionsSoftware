@@ -9,6 +9,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.io.File;
 import java.util.List;
@@ -59,7 +60,7 @@ public class MajorManagementPanel extends JPanel {
         topPanel.add(searchBar, BorderLayout.SOUTH);
 
         // --- TABLE ---
-        String[] cols = {"ID", "Mã ngành", "Tên ngành", "Tổ hợp gốc", "Chỉ tiêu", "Điểm sàn", "THPT", "ĐGNL", "VSAT"};
+        String[] cols = {"ID", "Mã ngành", "Tên ngành", "Tổ hợp gốc", "Chỉ tiêu", "Điểm sàn", "Điểm chuẩn", "THPT", "ĐGNL", "VSAT"};
         tableModel = new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -68,11 +69,8 @@ public class MajorManagementPanel extends JPanel {
         table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         table.setSelectionBackground(new Color(227, 242, 253));
         table.setGridColor(AppColor.BORDER);
-        table.getColumnModel().getColumn(0).setMaxWidth(50);
-        table.getColumnModel().getColumn(6).setMaxWidth(55);
-        table.getColumnModel().getColumn(7).setMaxWidth(55);
-        table.getColumnModel().getColumn(8).setMaxWidth(55);
-
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        
         JTableHeader header = table.getTableHeader();
         header.setBackground(AppColor.PRIMARY);
         header.setForeground(Color.WHITE);
@@ -81,6 +79,7 @@ public class MajorManagementPanel extends JPanel {
 
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(BorderFactory.createLineBorder(AppColor.BORDER));
+        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS); 
 
         JPanel centerCard = new JPanel(new BorderLayout());
         centerCard.setBackground(AppColor.SURFACE);
@@ -107,6 +106,8 @@ public class MajorManagementPanel extends JPanel {
         add(centerCard,  BorderLayout.CENTER);
         add(bottomPanel, BorderLayout.SOUTH);
 
+        setColumnWidths();
+
         // --- EVENTS ---
         btnSearch.addActionListener(e -> loadData(txtSearch.getText().trim()));
         txtSearch.addActionListener(e -> loadData(txtSearch.getText().trim()));
@@ -122,14 +123,28 @@ public class MajorManagementPanel extends JPanel {
         });
     }
 
+    private void setColumnWidths() {
+        int[] widths = { 50, 100, 250, 100, 80, 80, 100, 60, 60, 60 }; 
+        for (int i = 0; i < widths.length; i++) {
+            if (i < table.getColumnCount()) {
+                TableColumn column = table.getColumnModel().getColumn(i);
+                column.setPreferredWidth(widths[i]);
+            }
+        }
+    }
+
     private void loadData(String kw) {
         tableModel.setRowCount(0);
         currentList = service.search(kw);
         for (XtNganh n : currentList) {
             tableModel.addRow(new Object[]{
-                n.getIdnganh(), n.getManganh(), n.getTennganh(),
-                n.getNTohopgoc(), n.getNChitieu(),
+                n.getIdnganh(), 
+                n.getManganh(), 
+                n.getTennganh(),
+                n.getNTohopgoc(), 
+                n.getNChitieu(),
                 n.getNDiemsan() != null ? n.getNDiemsan() : "",
+                n.getNDiemtrungtuyen() != null ? n.getNDiemtrungtuyen() : "Chưa xét", // Hiển thị "Chưa xét" nếu NULL
                 "1".equals(n.getNThpt()) ? "✓" : "",
                 "1".equals(n.getNDgnl()) ? "✓" : "",
                 "1".equals(n.getNVsat()) ? "✓" : ""

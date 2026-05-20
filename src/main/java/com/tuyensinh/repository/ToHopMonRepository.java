@@ -107,4 +107,30 @@ public class ToHopMonRepository {
         q.setParameter("ma", matohop);
         return q.uniqueResult() > 0;
     }
+
+    public void mergeByMatohop(XtToHopMon incoming) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+
+            XtToHopMon existing = session.createQuery(
+                    "FROM XtToHopMon WHERE matohop = :ma", XtToHopMon.class)
+                .setParameter("ma", incoming.getMatohop())
+                .uniqueResult();
+
+            if (existing == null) {
+                session.persist(incoming);
+            } else {
+                if (incoming.getTentohop() != null) existing.setTentohop(incoming.getTentohop());
+                if (incoming.getMon1()     != null) existing.setMon1(incoming.getMon1());
+                if (incoming.getMon2()     != null) existing.setMon2(incoming.getMon2());
+                if (incoming.getMon3()     != null) existing.setMon3(incoming.getMon3());
+            }
+
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            throw new RuntimeException(e.getMessage());
+        }
+    }
 }
