@@ -72,41 +72,94 @@ public class NganhRepository {
         }
     }
 
-    public void saveAll(List<XtNganh> list) {
+    public void saveAllChiTieu(List<XtNganh> list) {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             tx = session.beginTransaction();
+
             for (XtNganh n : list) {
-                if (!existsByManganhInSession(session, n.getManganh())) {
+                XtNganh existing = findByManganhInSession(session, n.getManganh());
+
+                if (existing == null) {
                     session.save(n);
                 } else {
-                    Query<XtNganh> q = session.createQuery(
-                        "FROM XtNganh WHERE manganh = :ma", XtNganh.class);
-                    q.setParameter("ma", n.getManganh());
-                    XtNganh existing = q.uniqueResult();
-                    if (existing != null) {
+                    if (n.getTennganh() != null && !n.getTennganh().isBlank()) {
                         existing.setTennganh(n.getTennganh());
-                        existing.setNChitieu(n.getNChitieu());
-                        existing.setNDiemsan(n.getNDiemsan());
-                        existing.setNTohopgoc(n.getNTohopgoc());
-                        existing.setNDgnl(n.getNDgnl());
-                        existing.setNThpt(n.getNThpt());
-                        existing.setNVsat(n.getNVsat());
-                        session.update(existing);
                     }
+                    if (n.getNChitieu() != null) {
+                        existing.setNChitieu(n.getNChitieu());
+                    }
+                    session.update(existing);
                 }
             }
+
             tx.commit();
         } catch (Exception e) {
             if (tx != null) tx.rollback();
-            throw new RuntimeException("Lỗi import ngành: " + e.getMessage());
+            throw new RuntimeException("Lỗi import chỉ tiêu: " + e.getMessage());
         }
     }
 
-    private boolean existsByManganhInSession(Session session, String manganh) {
-        Query<Long> q = session.createQuery(
-            "SELECT COUNT(*) FROM XtNganh WHERE manganh = :ma", Long.class);
+    public void saveAllNguongDauVao(List<XtNganh> list) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+
+            for (XtNganh n : list) {
+                XtNganh existing = findByManganhInSession(session, n.getManganh());
+
+                if (existing == null) {
+                    session.save(n);
+                } else {
+                    if (n.getTennganh() != null && !n.getTennganh().isBlank()) {
+                        existing.setTennganh(n.getTennganh());
+                    }
+                    if (n.getNDiemsan() != null) {
+                        existing.setNDiemsan(n.getNDiemsan());
+                    }
+                    session.update(existing);
+                }
+            }
+
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            throw new RuntimeException("Lỗi import ngưỡng đầu vào: " + e.getMessage());
+        }
+    }
+
+    public void saveAllToHopGoc(List<XtNganh> list) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+
+            for (XtNganh n : list) {
+                XtNganh existing = findByManganhInSession(session, n.getManganh());
+
+                if (existing == null) {
+                    session.save(n);
+                } else {
+                    if (n.getTennganh() != null && !n.getTennganh().isBlank()) {
+                        existing.setTennganh(n.getTennganh());
+                    }
+                    if (n.getNTohopgoc() != null && !n.getNTohopgoc().isBlank()) {
+                        existing.setNTohopgoc(n.getNTohopgoc());
+                    }
+                    session.update(existing);
+                }
+            }
+
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            throw new RuntimeException("Lỗi import tổ hợp gốc: " + e.getMessage());
+        }
+    }
+
+    private XtNganh findByManganhInSession(Session session, String manganh) {
+        Query<XtNganh> q = session.createQuery(
+            "FROM XtNganh WHERE manganh = :ma", XtNganh.class);
         q.setParameter("ma", manganh);
-        return q.uniqueResult() > 0;
+        return q.uniqueResult();
     }
 }

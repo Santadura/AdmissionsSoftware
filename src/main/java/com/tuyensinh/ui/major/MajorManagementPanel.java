@@ -1,17 +1,32 @@
 package com.tuyensinh.ui.major;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.io.File;
+import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+
 import com.tuyensinh.entity.XtNganh;
 import com.tuyensinh.service.NganhService;
 import com.tuyensinh.ui.AppColor;
 import com.tuyensinh.ui.RoundedButton;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
-import java.awt.*;
-import java.io.File;
-import java.util.List;
 
 public class MajorManagementPanel extends JPanel {
 
@@ -32,7 +47,6 @@ public class MajorManagementPanel extends JPanel {
         setBackground(AppColor.BACKGROUND);
         setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // --- TOP ---
         JPanel topPanel = new JPanel(new BorderLayout(10, 10));
         topPanel.setOpaque(false);
 
@@ -50,7 +64,7 @@ public class MajorManagementPanel extends JPanel {
         txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
         RoundedButton btnSearch = new RoundedButton("Tìm kiếm", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
-        RoundedButton btnRefresh = new RoundedButton("Làm mới", new Color(100,150,200), new Color(70,120,170));
+        RoundedButton btnRefresh = new RoundedButton("Làm mới", new Color(100, 150, 200), new Color(70, 120, 170));
 
         searchBar.add(new JLabel("Tìm kiếm (mã/tên ngành):"));
         searchBar.add(txtSearch);
@@ -58,11 +72,14 @@ public class MajorManagementPanel extends JPanel {
         searchBar.add(btnRefresh);
         topPanel.add(searchBar, BorderLayout.SOUTH);
 
-        // --- TABLE ---
         String[] cols = {"ID", "Mã ngành", "Tên ngành", "Tổ hợp gốc", "Chỉ tiêu", "Điểm sàn", "THPT", "ĐGNL", "VSAT"};
         tableModel = new DefaultTableModel(cols, 0) {
-            public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
+
         table = new JTable(tableModel);
         table.setRowHeight(30);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -85,36 +102,38 @@ public class MajorManagementPanel extends JPanel {
         JPanel centerCard = new JPanel(new BorderLayout());
         centerCard.setBackground(AppColor.SURFACE);
         centerCard.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(AppColor.BORDER),
-            new EmptyBorder(10, 10, 10, 10)));
+                BorderFactory.createLineBorder(AppColor.BORDER),
+                new EmptyBorder(10, 10, 10, 10)));
         centerCard.add(scroll, BorderLayout.CENTER);
 
-        // --- BOTTOM BUTTONS ---
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
         bottomPanel.setOpaque(false);
 
-        RoundedButton btnAdd    = new RoundedButton("Thêm",        AppColor.PRIMARY, AppColor.PRIMARY_DARK);
-        RoundedButton btnEdit   = new RoundedButton("Sửa",         new Color(251,140,0), new Color(239,108,0));
-        RoundedButton btnDelete = new RoundedButton("Xóa",         new Color(229,57,53), new Color(198,40,40));
-        RoundedButton btnImport = new RoundedButton("Import Excel", new Color(67,160,71), new Color(46,125,50));
+        RoundedButton btnAdd = new RoundedButton("Thêm", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
+        RoundedButton btnEdit = new RoundedButton("Sửa", new Color(251, 140, 0), new Color(239, 108, 0));
+        RoundedButton btnDelete = new RoundedButton("Xóa", new Color(229, 57, 53), new Color(198, 40, 40));
+        RoundedButton btnImport = new RoundedButton("Import Excel", new Color(67, 160, 71), new Color(46, 125, 50));
 
         bottomPanel.add(btnImport);
         bottomPanel.add(btnAdd);
         bottomPanel.add(btnEdit);
         bottomPanel.add(btnDelete);
 
-        add(topPanel,    BorderLayout.NORTH);
-        add(centerCard,  BorderLayout.CENTER);
+        add(topPanel, BorderLayout.NORTH);
+        add(centerCard, BorderLayout.CENTER);
         add(bottomPanel, BorderLayout.SOUTH);
 
-        // --- EVENTS ---
         btnSearch.addActionListener(e -> loadData(txtSearch.getText().trim()));
         txtSearch.addActionListener(e -> loadData(txtSearch.getText().trim()));
-        btnRefresh.addActionListener(e -> { txtSearch.setText(""); loadData(""); });
+        btnRefresh.addActionListener(e -> {
+            txtSearch.setText("");
+            loadData("");
+        });
         btnAdd.addActionListener(e -> addNganh());
         btnEdit.addActionListener(e -> editNganh());
         btnDelete.addActionListener(e -> deleteNganh());
         btnImport.addActionListener(e -> importExcel());
+
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (e.getClickCount() == 2) editNganh();
@@ -125,22 +144,27 @@ public class MajorManagementPanel extends JPanel {
     private void loadData(String kw) {
         tableModel.setRowCount(0);
         currentList = service.search(kw);
+
         for (XtNganh n : currentList) {
             tableModel.addRow(new Object[]{
-                n.getIdnganh(), n.getManganh(), n.getTennganh(),
-                n.getNTohopgoc(), n.getNChitieu(),
-                n.getNDiemsan() != null ? n.getNDiemsan() : "",
-                "1".equals(n.getNThpt()) ? "✓" : "",
-                "1".equals(n.getNDgnl()) ? "✓" : "",
-                "1".equals(n.getNVsat()) ? "✓" : ""
+                    n.getIdnganh(),
+                    n.getManganh(),
+                    n.getTennganh(),
+                    n.getNTohopgoc(),
+                    n.getNChitieu(),
+                    n.getNDiemsan() != null ? n.getNDiemsan() : "",
+                    "1".equals(n.getNThpt()) ? "✓" : "",
+                    "1".equals(n.getNDgnl()) ? "✓" : "",
+                    "1".equals(n.getNVsat()) ? "✓" : ""
             });
         }
     }
 
     private void addNganh() {
         MajorFormDialog dlg = new MajorFormDialog(
-            (JFrame) SwingUtilities.getWindowAncestor(this), null);
+                (JFrame) SwingUtilities.getWindowAncestor(this), null);
         dlg.setVisible(true);
+
         if (dlg.isConfirmed()) {
             try {
                 service.add(dlg.getNganh());
@@ -154,11 +178,16 @@ public class MajorManagementPanel extends JPanel {
 
     private void editNganh() {
         int row = table.getSelectedRow();
-        if (row == -1) { JOptionPane.showMessageDialog(this, "Vui lòng chọn một ngành!"); return; }
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một ngành!");
+            return;
+        }
+
         XtNganh selected = currentList.get(row);
         MajorFormDialog dlg = new MajorFormDialog(
-            (JFrame) SwingUtilities.getWindowAncestor(this), selected);
+                (JFrame) SwingUtilities.getWindowAncestor(this), selected);
         dlg.setVisible(true);
+
         if (dlg.isConfirmed()) {
             try {
                 service.update(dlg.getNganh());
@@ -172,10 +201,19 @@ public class MajorManagementPanel extends JPanel {
 
     private void deleteNganh() {
         int row = table.getSelectedRow();
-        if (row == -1) { JOptionPane.showMessageDialog(this, "Vui lòng chọn một ngành!"); return; }
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một ngành!");
+            return;
+        }
+
         XtNganh selected = currentList.get(row);
-        int confirm = JOptionPane.showConfirmDialog(this,
-            "Xóa ngành '" + selected.getTennganh() + "'?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Xóa ngành '" + selected.getTennganh() + "'?",
+                "Xác nhận",
+                JOptionPane.YES_NO_OPTION
+        );
+
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 service.delete(selected.getIdnganh());
@@ -190,27 +228,46 @@ public class MajorManagementPanel extends JPanel {
     private void importExcel() {
         JFileChooser fc = new JFileChooser();
         fc.setFileFilter(new javax.swing.filechooser.FileFilter() {
-            public boolean accept(File f) { return f.getName().endsWith(".xlsx") || f.isDirectory(); }
-            public String getDescription() { return "Excel files (*.xlsx)"; }
+            @Override
+            public boolean accept(File f) {
+                return f.isDirectory() || f.getName().toLowerCase().endsWith(".xlsx");
+            }
+
+            @Override
+            public String getDescription() {
+                return "Excel files (*.xlsx)";
+            }
         });
+
         if (fc.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
 
         SwingWorker<NganhService.ImportResult, Void> worker = new SwingWorker<>() {
+            @Override
             protected NganhService.ImportResult doInBackground() throws Exception {
                 return service.importFromExcel(fc.getSelectedFile());
             }
+
+            @Override
             protected void done() {
                 try {
                     NganhService.ImportResult r = get();
                     String msg = "Import thành công " + r.successCount + " ngành!";
-                    if (!r.errors.isEmpty()) msg += "\n\nLỗi:\n" + String.join("\n", r.errors.subList(0, Math.min(5, r.errors.size())));
+                    if (!r.errors.isEmpty()) {
+                        msg += "\n\nLỗi:\n" + String.join("\n", r.errors.subList(0, Math.min(5, r.errors.size())));
+                    }
                     JOptionPane.showMessageDialog(MajorManagementPanel.this, msg);
                     loadData("");
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(MajorManagementPanel.this, "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(
+                            MajorManagementPanel.this,
+                            "Lỗi: " + ex.getMessage(),
+                            "Lỗi",
+                            JOptionPane.ERROR_MESSAGE
+                    );
                 }
             }
         };
+
         worker.execute();
     }
 }
