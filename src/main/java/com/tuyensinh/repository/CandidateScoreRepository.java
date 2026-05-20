@@ -353,4 +353,66 @@ public class CandidateScoreRepository {
             return session.createNativeQuery(sql).list();
         }
     }
+
+    //=============== IMPORT ================
+    public CandidateScore findByCccdAndLoai(String cccd, String loai) {
+
+        try (Session session = HibernateUtil
+                .getSessionFactory()
+                .openSession()) {
+
+            Query<CandidateScore> query = session.createQuery(
+                    "FROM CandidateScore " +
+                            "WHERE cccd = :cccd " +
+                            "AND dPhuongthuc = :loai",
+                    CandidateScore.class
+            );
+
+            query.setParameter("cccd", cccd);
+            query.setParameter("loai", loai);
+
+            return query.uniqueResult();
+        }
+    }
+
+    public void saveOrUpdateByCccdAndLoai(CandidateScore imported) {
+
+        Transaction transaction = null;
+
+        try (Session session = HibernateUtil
+                .getSessionFactory()
+                .openSession()) {
+
+            transaction = session.beginTransaction();
+
+            Query<CandidateScore> query = session.createQuery(
+                    "FROM CandidateScore " +
+                            "WHERE cccd = :cccd " +
+                            "AND dPhuongthuc = :loai",
+                    CandidateScore.class
+            );
+
+            query.setParameter("cccd", imported.getCccd());
+            query.setParameter("loai", imported.getDPhuongthuc());
+
+            CandidateScore existing = query.uniqueResult();
+
+            if (existing == null) {
+                session.save(imported);
+            } else {
+                imported.setIddiemthi(existing.getIddiemthi());
+                session.merge(imported);
+            }
+
+            transaction.commit();
+
+        } catch (Exception e) {
+
+            if (transaction != null && transaction.isActive()) {
+                transaction.rollback();
+            }
+
+            throw new RuntimeException("Lỗi lưu điểm: " + e.getMessage(), e);
+        }
+    }
 }

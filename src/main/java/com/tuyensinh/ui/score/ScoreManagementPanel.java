@@ -99,16 +99,28 @@ public class ScoreManagementPanel extends JPanel {
         // ================= TABLE =================
 
         String[] columns = {
-                "ID",
-                "CCCD",
-                "SBD",
-                "Loại",
-                "Toán",
-                "Lý",
-                "Hóa",
-                "Sinh",
-                "Văn",
-                "Anh"
+            "ID",
+            "CCCD",
+            "SBD",
+            "Loại",
+            "TO",
+            "LI",
+            "HO",
+            "SI",
+            "SU",
+            "DI",
+            "VA",
+            "N1_THI",
+            "N1_CC",
+            "CNCN",
+            "CNNN",
+            "TI",
+            "KTPL",
+            "NL1",
+            "NK1",
+            "NK2",
+            "NK3",
+            "NK4"
         };
 
         tableModel = new DefaultTableModel(columns, 0) {
@@ -120,9 +132,18 @@ public class ScoreManagementPanel extends JPanel {
 
         tableScores = new JTable(tableModel);
 
+        tableScores.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         tableScores.setRowHeight(30);
         tableScores.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tableScores.setGridColor(AppColor.BORDER);
+        tableScores.getColumnModel().getColumn(0).setPreferredWidth(60);   // ID
+        tableScores.getColumnModel().getColumn(1).setPreferredWidth(130);  // CCCD
+        tableScores.getColumnModel().getColumn(2).setPreferredWidth(120);  // SBD
+        tableScores.getColumnModel().getColumn(3).setPreferredWidth(90);   // Loại
+
+        for (int i = 4; i < tableScores.getColumnCount(); i++) {
+            tableScores.getColumnModel().getColumn(i).setPreferredWidth(90);
+        }
 
         JTableHeader header = tableScores.getTableHeader();
 
@@ -131,7 +152,11 @@ public class ScoreManagementPanel extends JPanel {
         header.setFont(new Font("Segoe UI", Font.BOLD, 13));
         header.setPreferredSize(new Dimension(header.getWidth(), 35));
 
-        JScrollPane scrollPane = new JScrollPane(tableScores);
+        JScrollPane scrollPane = new JScrollPane(
+                tableScores,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
+        );
 
         JPanel centerCard = new JPanel(new BorderLayout());
 
@@ -254,8 +279,20 @@ public class ScoreManagementPanel extends JPanel {
                         s.getLi(),
                         s.getHo(),
                         s.getSi(),
+                        s.getSu(),
+                        s.getDi(),
                         s.getVa(),
-                        s.getN1Thi()
+                        s.getN1Thi(),
+                        s.getN1Cc(),
+                        s.getCncn(),
+                        s.getCnnn(),
+                        s.getTi(),
+                        s.getKtpl(),
+                        s.getNl1(),
+                        s.getNk1(),
+                        s.getNk2(),
+                        s.getNk3(),
+                        s.getNk4()
                 });
             }
         }

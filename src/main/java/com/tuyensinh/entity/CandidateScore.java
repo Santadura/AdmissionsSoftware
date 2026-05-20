@@ -70,6 +70,12 @@ public class CandidateScore {
     @Column(name = "`NK2`")
     private BigDecimal nk2;
 
+    @Column(name = "`NK3`")
+    private BigDecimal nk3;
+
+    @Column(name = "`NK4`")
+    private BigDecimal nk4;
+
     public CandidateScore() {
     }
 
@@ -231,5 +237,21 @@ public class CandidateScore {
 
     public void setNk2(BigDecimal nk2) {
         this.nk2 = nk2;
+    }
+
+    public BigDecimal getNk3() {
+        return nk3;
+    }
+
+    public void setNk3(BigDecimal nk3) {
+        this.nk3 = nk3;
+    }
+
+    public BigDecimal getNk4() {
+        return nk4;
+    }
+
+    public void setNk4(BigDecimal nk4) {
+        this.nk4 = nk4;
     }
 }
