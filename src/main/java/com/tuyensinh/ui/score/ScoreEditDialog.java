@@ -3,6 +3,7 @@ package com.tuyensinh.ui.score;
 
 import com.tuyensinh.entity.CandidateScore;
 import com.tuyensinh.service.CandidateScoreService;
+import com.tuyensinh.service.CandidateService;
 import com.tuyensinh.ui.AppColor;
 import com.tuyensinh.ui.RoundedButton;
 
@@ -15,6 +16,7 @@ public class ScoreEditDialog extends JDialog {
 
     private CandidateScore score;
     private CandidateScoreService service;
+    private CandidateService candidateService;
 
     private boolean saved = false;
     private boolean isAdd;
@@ -44,6 +46,7 @@ public class ScoreEditDialog extends JDialog {
 
         this.score = score;
         this.service = service;
+        this.candidateService = new CandidateService();
         this.isAdd = isAdd;
 
         initUI();
@@ -133,7 +136,7 @@ public class ScoreEditDialog extends JDialog {
         txtCccd.setText(score.getCccd());
         txtSbd.setText(score.getSobaodanh());
 
-        cboLoai.setSelectedItem(score.getDPhuongthuc());
+        cboLoai.setSelectedItem(service.toLoaiText(score.getDPhuongthuc()));
 
         txtToan.setText(toString(score.getTo()));
         txtLy.setText(toString(score.getLi()));
@@ -160,12 +163,46 @@ public class ScoreEditDialog extends JDialog {
 
         try {
 
-            score.setCccd(txtCccd.getText().trim());
-            score.setSobaodanh(txtSbd.getText().trim());
+            String cccd = txtCccd.getText().trim();
+            String sbd = txtSbd.getText().trim();
+            String loaiText = cboLoai.getSelectedItem().toString();
+            String loaiCode = service.toLoaiCode(loaiText);
 
-            score.setDPhuongthuc(
-                    cboLoai.getSelectedItem().toString()
-            );
+            if (cccd.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "CCCD không được để trống!",
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE
+                );
+                return;
+            }
+
+            if (!candidateService.existsByCccdOrSbd(cccd, sbd)) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Không tìm thấy thí sinh có CCCD/SBD này.\n" +
+                                "Vui lòng kiểm tra lại hoặc thêm thí sinh trước khi nhập điểm.",
+                        "Thí sinh không tồn tại",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            if (isAdd && service.existsByCccdAndLoai(cccd, loaiText)) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Thí sinh này đã tồn tại điểm ở phương thức " + loaiText + ".\n" +
+                                "Vui lòng chọn dòng điểm hiện có để sửa thay vì thêm mới.",
+                        "Dữ liệu đã tồn tại",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            score.setCccd(cccd);
+            score.setSobaodanh(sbd);
+            score.setDPhuongthuc(loaiCode);
 
             score.setTo(decimal(txtToan.getText()));
             score.setLi(decimal(txtLy.getText()));
@@ -182,8 +219,10 @@ public class ScoreEditDialog extends JDialog {
 
             saved = true;
 
-            JOptionPane.showMessageDialog(this,
-                    "Lưu thành công");
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Lưu điểm thành công!"
+            );
 
             dispose();
 
@@ -191,7 +230,9 @@ public class ScoreEditDialog extends JDialog {
 
             JOptionPane.showMessageDialog(
                     this,
-                    "Lỗi: " + e.getMessage()
+                    "Không thể lưu điểm.\nChi tiết: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE
             );
         }
     }

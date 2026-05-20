@@ -89,7 +89,27 @@ public class CandidateRepository {
             return query.uniqueResult();
         }
     }
-    
+
+    public boolean existsByCccdOrSbd(String cccd, String sobaodanh) {
+
+        try (Session session = HibernateUtil
+                .getSessionFactory()
+                .openSession()) {
+
+            String hql =
+                    "SELECT COUNT(*) FROM Candidate " +
+                            "WHERE cccd = :cccd " +
+                            "OR sobaodanh = :sbd";
+
+            Query<Long> query = session.createQuery(hql, Long.class);
+
+            query.setParameter("cccd", cccd);
+            query.setParameter("sbd", sobaodanh);
+
+            return query.uniqueResult() > 0;
+        }
+    }
+
     public void update(Candidate candidate) {
         Transaction transaction = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
