@@ -33,6 +33,12 @@ public class Aspiration {
     @Column(name = "diem_utqd")
     private BigDecimal diemUtqd;
 
+    @Column(name = "diem_utxt")
+    private BigDecimal diemUtxt;
+
+    @Column(name = "diem_cc")
+    private BigDecimal diemCc;
+
     @Column(name = "diem_cong")
     private BigDecimal diemCong;
 
@@ -48,8 +54,11 @@ public class Aspiration {
     @Column(name = "tt_phuongthuc")
     private String phuongThuc;
 
-    @Column(name = "tt_thm")
+    @Column(name = "nv_matohop")
     private String toHop;
+
+    @Column(name = "ho_ten")
+    private String hoTen;
 
     public Integer getId() {
         return id;
@@ -65,6 +74,14 @@ public class Aspiration {
 
     public void setCccd(String cccd) {
         this.cccd = cccd;
+    }
+
+    public String getHoTen() {
+        return hoTen;
+    }
+
+    public void setHoTen(String hoTen) {
+        this.hoTen = hoTen;
     }
 
     public String getMaNganh() {
@@ -97,6 +114,22 @@ public class Aspiration {
 
     public void setDiemUtqd(BigDecimal diemUtqd) {
         this.diemUtqd = diemUtqd;
+    }
+
+    public BigDecimal getDiemUtxt() {
+        return diemUtxt;
+    }
+
+    public void setDiemUtxt(BigDecimal diemUtxt) {
+        this.diemUtxt = diemUtxt;
+    }
+
+    public BigDecimal getDiemCc() {
+        return diemCc;
+    }
+
+    public void setDiemCc(BigDecimal diemCc) {
+        this.diemCc = diemCc;
     }
 
     public BigDecimal getDiemCong() {

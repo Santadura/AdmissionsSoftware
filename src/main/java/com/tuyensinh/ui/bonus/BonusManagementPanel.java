@@ -36,25 +36,35 @@ public class BonusManagementPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTextField txtSearch;
 
+    /**
+     * Khởi tạo panel quản lý điểm cộng.
+     * Thiết lập service, giao diện và tải dữ liệu ban đầu.
+     */
     public BonusManagementPanel() {
         this.service = new BonusScoreService();
         initUI();
         loadData();
     }
 
+    /**
+     * Khởi tạo giao diện người dùng cho panel.
+     * Bao gồm tiêu đề, thanh tìm kiếm, bảng hiển thị dữ liệu và các nút chức năng.
+     */
     private void initUI() {
         setLayout(new BorderLayout(15, 15));
         setBackground(AppColor.BACKGROUND);
         setBorder(new EmptyBorder(20, 20, 20, 20));
 
+        // Panel chứa tiêu đề và thanh tìm kiếm
         JPanel topPanel = new JPanel(new BorderLayout(10, 10));
         topPanel.setOpaque(false);
 
-        JLabel lblTitle = new JLabel("Quan ly diem cong");
+        JLabel lblTitle = new JLabel("Quản lý điểm cộng");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 30));
         lblTitle.setForeground(AppColor.TEXT_PRIMARY);
         topPanel.add(lblTitle, BorderLayout.NORTH);
 
+        // Thanh tìm kiếm
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         searchPanel.setBackground(AppColor.SURFACE);
         searchPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -63,9 +73,10 @@ public class BonusManagementPanel extends JPanel {
 
         txtSearch = new JTextField(24);
         txtSearch.setPreferredSize(new Dimension(260, 35));
-        JButton btnSearch = new RoundedButton("Tim kiem", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
-        JButton btnRefresh = new RoundedButton("Lam moi", new Color(100, 150, 200), new Color(70, 120, 170));
+        JButton btnSearch = new RoundedButton("Tìm kiếm", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
+        JButton btnRefresh = new RoundedButton("Làm mới", new Color(100, 150, 200), new Color(70, 120, 170));
 
+        // Lắng nghe sự kiện tìm kiếm và làm mới
         btnSearch.addActionListener(e -> loadData());
         txtSearch.addActionListener(e -> loadData());
         btnRefresh.addActionListener(e -> {
@@ -73,7 +84,7 @@ public class BonusManagementPanel extends JPanel {
             loadData();
         });
 
-        searchPanel.add(new JLabel("CCCD / ma nganh / to hop / phuong thuc:"));
+        searchPanel.add(new JLabel("Tìm kiếm (CCCD, Nguyện vọng, ...):"));
         searchPanel.add(txtSearch);
         searchPanel.add(btnSearch);
         searchPanel.add(btnRefresh);
@@ -81,9 +92,10 @@ public class BonusManagementPanel extends JPanel {
 
         add(topPanel, BorderLayout.NORTH);
 
+        // Cấu hình bảng hiển thị điểm cộng
         String[] columns = {
-                "ID", "CCCD", "Ma nganh", "To hop", "Phuong thuc",
-                "Diem CC", "Diem UTXT", "Diem tong", "Ghi chu", "Key"
+                "ID", "CCCD", "Nguyện vọng", "Tổ hợp", "Phương thức",
+                "Điểm Tiếng Anh", "Điểm HSG", "Tổng điểm", "Ghi chú", "Key"
         };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
@@ -98,6 +110,7 @@ public class BonusManagementPanel extends JPanel {
         tableBonus.setSelectionBackground(new Color(227, 242, 253));
         tableBonus.setGridColor(AppColor.BORDER);
 
+        // Tùy chỉnh tiêu đề bảng
         JTableHeader header = tableBonus.getTableHeader();
         header.setBackground(AppColor.PRIMARY);
         header.setForeground(Color.WHITE);
@@ -107,6 +120,7 @@ public class BonusManagementPanel extends JPanel {
         JScrollPane scrollPane = new JScrollPane(tableBonus);
         scrollPane.setBorder(BorderFactory.createLineBorder(AppColor.BORDER));
 
+        // Panel bao quanh bảng (card style)
         JPanel centerCard = new JPanel(new BorderLayout());
         centerCard.setBackground(AppColor.SURFACE);
         centerCard.setBorder(BorderFactory.createCompoundBorder(
@@ -115,16 +129,19 @@ public class BonusManagementPanel extends JPanel {
         centerCard.add(scrollPane, BorderLayout.CENTER);
         add(centerCard, BorderLayout.CENTER);
 
+        // Panel chứa các nút hành động (Thêm, Sửa, Xóa)
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         actionPanel.setOpaque(false);
 
-        JButton btnAdd = new RoundedButton("Them", new Color(67, 160, 71), new Color(46, 125, 50));
-        JButton btnEdit = new RoundedButton("Sua", new Color(251, 140, 0), new Color(239, 108, 0));
-        JButton btnDelete = new RoundedButton("Xoa", new Color(211, 47, 47), new Color(183, 28, 28));
+        JButton btnAdd = new RoundedButton("Thêm", new Color(67, 160, 71), new Color(46, 125, 50));
+        JButton btnEdit = new RoundedButton("Sửa", new Color(251, 140, 0), new Color(239, 108, 0));
+        JButton btnDelete = new RoundedButton("Xóa", new Color(211, 47, 47), new Color(183, 28, 28));
 
         btnAdd.addActionListener(e -> openFormDialog(null));
         btnEdit.addActionListener(e -> editSelected());
         btnDelete.addActionListener(e -> deleteSelected());
+        
+        // Cho phép sửa nhanh bằng cách click đúp chuột vào dòng
         tableBonus.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mousePressed(java.awt.event.MouseEvent event) {
@@ -140,6 +157,10 @@ public class BonusManagementPanel extends JPanel {
         add(actionPanel, BorderLayout.SOUTH);
     }
 
+    /**
+     * Tải dữ liệu từ database vào bảng.
+     * Nếu có từ khóa tìm kiếm trong txtSearch, dữ liệu sẽ được lọc theo từ khóa đó.
+     */
     private void loadData() {
         tableModel.setRowCount(0);
         List<BonusScore> bonusScores = service.getBonusScores(txtSearch == null ? "" : txtSearch.getText());
@@ -159,32 +180,40 @@ public class BonusManagementPanel extends JPanel {
         }
     }
 
+    /**
+     * Xử lý khi nhấn nút Sửa hoặc click đúp vào dòng trên bảng.
+     * Kiểm tra dòng được chọn và mở dialog chỉnh sửa.
+     */
     private void editSelected() {
         Integer id = getSelectedId();
         if (id == null) {
-            JOptionPane.showMessageDialog(this, "Vui long chon mot dong de sua.");
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng để sửa.");
             return;
         }
 
         BonusScore bonusScore = service.getById(id);
         if (bonusScore == null) {
-            JOptionPane.showMessageDialog(this, "Khong tim thay diem cong.");
+            JOptionPane.showMessageDialog(this, "Không tìm thấy điểm cộng.");
             return;
         }
         openFormDialog(bonusScore);
     }
 
+    /**
+     * Xử lý khi nhấn nút Xóa.
+     * Hiển thị hộp thoại xác nhận trước khi xóa dữ liệu trong database.
+     */
     private void deleteSelected() {
         Integer id = getSelectedId();
         if (id == null) {
-            JOptionPane.showMessageDialog(this, "Vui long chon mot dong de xoa.");
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng để xóa.");
             return;
         }
 
         int confirm = JOptionPane.showConfirmDialog(
-                this,
-                "Xoa diem cong da chon?",
-                "Xac nhan",
+            this,
+            "Xóa điểm cộng đã chọn?",
+            "Xác nhận",
                 JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) {
             return;
@@ -193,12 +222,16 @@ public class BonusManagementPanel extends JPanel {
         try {
             service.deleteBonusScore(id);
             loadData();
-            JOptionPane.showMessageDialog(this, "Da xoa diem cong.");
+            JOptionPane.showMessageDialog(this, "Đã xóa điểm cộng.");
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Loi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
+    /**
+     * Lấy ID của dòng đang được chọn trong bảng.
+     * @return ID (Integer) hoặc null nếu không có dòng nào được chọn.
+     */
     private Integer getSelectedId() {
         int selectedRow = tableBonus.getSelectedRow();
         if (selectedRow < 0) {
@@ -207,16 +240,21 @@ public class BonusManagementPanel extends JPanel {
         return (Integer) tableModel.getValueAt(selectedRow, 0);
     }
 
+    /**
+     * Mở hộp thoại (Dialog) để thêm mới hoặc chỉnh sửa điểm cộng.
+     * @param current Đối tượng BonusScore cần sửa, hoặc null nếu là thêm mới.
+     */
     private void openFormDialog(BonusScore current) {
         boolean editMode = current != null;
         JDialog dialog = new JDialog(
                 SwingUtilities.getWindowAncestor(this),
-                editMode ? "Sua diem cong" : "Them diem cong",
+            editMode ? "Sửa điểm cộng" : "Thêm điểm cộng",
                 Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setSize(520, 420);
+        dialog.setSize(650, 480);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout(10, 10));
 
+        // Form nhập liệu
         JPanel formPanel = new JPanel(new GridLayout(9, 2, 10, 10));
         formPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
         formPanel.setBackground(AppColor.SURFACE);
@@ -232,26 +270,27 @@ public class BonusManagementPanel extends JPanel {
 
         formPanel.add(new JLabel("CCCD:"));
         formPanel.add(txtCccd);
-        formPanel.add(new JLabel("Ma nganh:"));
+        formPanel.add(new JLabel("Nguyện vọng:"));
         formPanel.add(txtMaNganh);
-        formPanel.add(new JLabel("Ma to hop:"));
+        formPanel.add(new JLabel("Mã tổ hợp:"));
         formPanel.add(txtMaToHop);
-        formPanel.add(new JLabel("Phuong thuc:"));
+        formPanel.add(new JLabel("Phương thức:"));
         formPanel.add(txtPhuongThuc);
-        formPanel.add(new JLabel("Diem cong chung:"));
+        formPanel.add(new JLabel("Điểm Tiếng Anh:"));
         formPanel.add(txtDiemCc);
-        formPanel.add(new JLabel("Diem UTXT:"));
+        formPanel.add(new JLabel("Điểm HSG:"));
         formPanel.add(txtDiemUtxt);
-        formPanel.add(new JLabel("Diem tong:"));
+        formPanel.add(new JLabel("Tổng điểm:"));
         formPanel.add(txtDiemTong);
-        formPanel.add(new JLabel("Ghi chu:"));
+        formPanel.add(new JLabel("Ghi chú:"));
         formPanel.add(txtGhiChu);
         formPanel.add(new JLabel(""));
-        formPanel.add(new JLabel("Bo trong diem tong de tu cong CC + UTXT."));
+        formPanel.add(new JLabel("Bỏ trống điểm tổng để tự động tính (Anh + HSG)."));
 
+        // Panel chứa nút Lưu và Hủy
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnSave = new RoundedButton("Luu", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
-        JButton btnCancel = new RoundedButton("Huy", Color.GRAY, Color.DARK_GRAY);
+        JButton btnSave = new RoundedButton("Lưu", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
+        JButton btnCancel = new RoundedButton("Hủy", Color.GRAY, Color.DARK_GRAY);
 
         btnSave.addActionListener(e -> {
             try {
@@ -274,7 +313,7 @@ public class BonusManagementPanel extends JPanel {
                 loadData();
                 dialog.dispose();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialog, ex.getMessage(), "Loi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         });
         btnCancel.addActionListener(e -> dialog.dispose());
@@ -287,11 +326,22 @@ public class BonusManagementPanel extends JPanel {
         dialog.setVisible(true);
     }
 
+    /**
+     * Chuyển đổi chuỗi văn bản sang BigDecimal.
+     * @param value Chuỗi cần chuyển đổi.
+     * @return BigDecimal hoặc null nếu chuỗi rỗng.
+     */
     private BigDecimal parseDecimal(String value) {
         String cleaned = value == null ? "" : value.trim();
         return cleaned.isEmpty() ? null : new BigDecimal(cleaned);
     }
 
+    /**
+     * Chuyển đổi BigDecimal sang chuỗi văn bản để hiển thị lên UI.
+     * Loại bỏ các số 0 thừa ở cuối.
+     * @param value Giá trị BigDecimal.
+     * @return Chuỗi văn bản hoặc rỗng nếu giá trị null.
+     */
     private String decimalToText(BigDecimal value) {
         return value == null ? "" : value.stripTrailingZeros().toPlainString();
     }

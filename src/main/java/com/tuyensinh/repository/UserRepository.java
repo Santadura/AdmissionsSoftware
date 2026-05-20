@@ -69,7 +69,7 @@ public class UserRepository {
                        END AS full_name,
                        u.role,
                        u.enabled
-                FROM users u
+                FROM xt_users u
                 LEFT JOIN xt_thisinhxettuyen25 t ON u.thisinh_id = t.idthisinh
                 ORDER BY u.id
             """;
