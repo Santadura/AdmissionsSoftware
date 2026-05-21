@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import javax.swing.BorderFactory;
+import javax.swing.JProgressBar;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
@@ -128,7 +129,7 @@ public class AspirationManagementPanel extends JPanel {
         JButton btnEdit = new RoundedButton("Sửa", new Color(251, 140, 0), new Color(239, 108, 0));
         JButton btnDelete = new RoundedButton("Xóa", new Color(211, 47, 47), new Color(183, 28, 28));
 
-        btnRunAdmission.addActionListener(e -> runAdmission());
+        btnRunAdmission.addActionListener(e -> runAdmissionInBackground());
         btnReport.addActionListener(e -> showReportDialog());
         btnAdd.addActionListener(e -> openFormDialog(null));
         btnEdit.addActionListener(e -> editSelected());
@@ -178,17 +179,56 @@ public class AspirationManagementPanel extends JPanel {
         }
     }
 
-    private void runAdmission() {
+    private void runAdmissionInBackground() {
+
         int confirm = JOptionPane.showConfirmDialog(
                 this,
-                "Chạy xét tuyển sẽ cập nhật điểm cộng, điểm xét tuyển và kết quả cho tất cả nguyện vọng. Tiếp tục?",
+                "Chạy xét tuyển sẽ cập nhật điểm cộng, điểm xét tuyển và kết quả cho tất cả nguyện vọng.\n\n" +
+                        "Bạn có chắc muốn tiếp tục?",
                 "Xác nhận xét tuyển",
-                JOptionPane.YES_NO_OPTION);
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+
         if (confirm != JOptionPane.YES_OPTION) {
             return;
         }
 
+        JDialog progressDialog = new JDialog(
+                (java.awt.Frame) SwingUtilities.getWindowAncestor(this),
+                "Đang xét tuyển...",
+                true
+        );
+
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        panel.setBackground(AppColor.BACKGROUND);
+
+        JLabel lblTitle = new JLabel("Hệ thống đang xét tuyển...");
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblTitle.setForeground(AppColor.TEXT_PRIMARY);
+
+        JLabel lblMessage = new JLabel("Vui lòng chờ, quá trình này có thể mất vài phút nếu dữ liệu lớn.");
+        lblMessage.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+
+        JProgressBar progressBar = new JProgressBar();
+        progressBar.setIndeterminate(true);
+
+        JPanel textPanel = new JPanel(new GridLayout(2, 1, 5, 5));
+        textPanel.setOpaque(false);
+        textPanel.add(lblTitle);
+        textPanel.add(lblMessage);
+
+        panel.add(textPanel, BorderLayout.NORTH);
+        panel.add(progressBar, BorderLayout.CENTER);
+
+        progressDialog.setContentPane(panel);
+        progressDialog.setSize(480, 150);
+        progressDialog.setLocationRelativeTo(this);
+        progressDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+
         SwingWorker<AdmissionResult, Void> worker = new SwingWorker<>() {
+
             @Override
             protected AdmissionResult doInBackground() {
                 return service.runAdmission();
@@ -196,27 +236,46 @@ public class AspirationManagementPanel extends JPanel {
 
             @Override
             protected void done() {
+
+                progressDialog.dispose();
+
                 try {
+
                     AdmissionResult result = get();
+
                     loadData();
+
                     JOptionPane.showMessageDialog(
                             AspirationManagementPanel.this,
-                                "Đã xét " + result.getTotal() + " nguyện vọng.\n"
-                                    + "Trúng tuyển: " + result.getPassed() + "\n"
-                                    + "Không trúng tuyển: " + result.getFailed() + "\n"
-                                    + "Dưới sàn: " + result.getBelowFloor() + "\n"
-                                    + "Chưa có điểm: " + result.getMissingScore() + "\n"
-                                    + "Chưa cấu hình ngành: " + result.getMissingMajorConfig());
+                            "Xét tuyển hoàn tất!\n\n" +
+                                    "Tổng nguyện vọng: " + result.getTotal() + "\n" +
+                                    "Trúng tuyển: " + result.getPassed() + "\n" +
+                                    "Không trúng tuyển: " + result.getFailed() + "\n" +
+                                    "Dưới sàn: " + result.getBelowFloor() + "\n" +
+                                    "Chưa có điểm: " + result.getMissingScore() + "\n" +
+                                    "Chưa cấu hình ngành: " + result.getMissingMajorConfig(),
+                            "Hoàn tất",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+
                 } catch (Exception ex) {
+
+                    Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
+
                     JOptionPane.showMessageDialog(
                             AspirationManagementPanel.this,
-                            ex.getMessage(),
-                            "Loi",
-                            JOptionPane.ERROR_MESSAGE);
+                            "Xét tuyển bị lỗi.\n\nChi tiết: " + cause.getMessage(),
+                            "Lỗi xét tuyển",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+
+                    cause.printStackTrace();
                 }
             }
         };
+
         worker.execute();
+        progressDialog.setVisible(true);
     }
 
     private void showReportDialog() {

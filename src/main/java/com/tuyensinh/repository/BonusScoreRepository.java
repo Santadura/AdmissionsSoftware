@@ -50,7 +50,7 @@ public class BonusScoreRepository {
                            COALESCE(NULLIF(TRIM(phuongthuc), ''), '') AS phuongthuc_key,
                            SUM(COALESCE(diemCC, 0)),
                            SUM(COALESCE(diemUtxt, 0))
-                    FROM xt_diemcongxetuyen
+                    FROM xt_diemcongxettuyen
                     GROUP BY ts_cccd,
                              manganh,
                              matohop,

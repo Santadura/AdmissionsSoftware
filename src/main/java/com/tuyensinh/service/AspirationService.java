@@ -66,39 +66,80 @@ public class AspirationService {
     }
 
     private AdmissionResult calculateAdmission(boolean saveResult) {
+
+        long startTime = System.currentTimeMillis();
+
+        System.out.println("======================================");
+        System.out.println("BẮT ĐẦU XÉT TUYỂN");
+        System.out.println("saveResult = " + saveResult);
+        System.out.println("======================================");
+
         List<Aspiration> aspirations = repository.findAll();
+        System.out.println("Đã load nguyện vọng: " + aspirations.size());
+
         Map<String, BigDecimal> floors = repository.findMajorFloors();
+        System.out.println("Đã load điểm sàn ngành: " + floors.size());
+
         Map<String, Integer> quotas = repository.findMajorQuotas();
+        System.out.println("Đã load chỉ tiêu ngành: " + quotas.size());
+
         Map<String, String> rootCombinations = repository.findMajorRootCombinations();
+        System.out.println("Đã load tổ hợp gốc ngành: " + rootCombinations.size());
+
         Map<String, BigDecimal[]> bonusTotals = bonusRepository.findBonusTotals();
-        
-        // Load data for best combination calculation
-        List<com.tuyensinh.entity.CandidateScore> allScores = new com.tuyensinh.repository.CandidateScoreRepository().findAll();
-        List<com.tuyensinh.entity.MajorCombination> allMajorCombinations = new com.tuyensinh.repository.MajorCombinationRepository().findAll();
-        List<com.tuyensinh.entity.XtToHopMon> allToHopMon = new com.tuyensinh.repository.ToHopMonRepository().findAll();
-        
+        System.out.println("Đã load điểm cộng/ưu tiên: " + bonusTotals.size());
+
+        List<com.tuyensinh.entity.CandidateScore> allScores =
+                new com.tuyensinh.repository.CandidateScoreRepository().findAll();
+        System.out.println("Đã load điểm thí sinh: " + allScores.size());
+
+        List<com.tuyensinh.entity.MajorCombination> allMajorCombinations =
+                new com.tuyensinh.repository.MajorCombinationRepository().findAll();
+        System.out.println("Đã load ngành - tổ hợp: " + allMajorCombinations.size());
+
+        List<com.tuyensinh.entity.XtToHopMon> allToHopMon =
+                new com.tuyensinh.repository.ToHopMonRepository().findAll();
+        System.out.println("Đã load tổ hợp môn: " + allToHopMon.size());
+
         Map<String, List<com.tuyensinh.entity.CandidateScore>> scoresByCccd = new HashMap<>();
+
         for (com.tuyensinh.entity.CandidateScore s : allScores) {
-            scoresByCccd.computeIfAbsent(s.getCccd(), k -> new ArrayList<>()).add(s);
+            scoresByCccd
+                    .computeIfAbsent(s.getCccd(), k -> new ArrayList<>())
+                    .add(s);
         }
-        
+
         Map<String, List<com.tuyensinh.entity.MajorCombination>> majorToCombs = new HashMap<>();
+
         for (com.tuyensinh.entity.MajorCombination mc : allMajorCombinations) {
-            majorToCombs.computeIfAbsent(mc.getMaNganh(), k -> new ArrayList<>()).add(mc);
+            majorToCombs
+                    .computeIfAbsent(mc.getMaNganh(), k -> new ArrayList<>())
+                    .add(mc);
         }
-        
+
         Map<String, com.tuyensinh.entity.XtToHopMon> toHopMap = new HashMap<>();
+
         for (com.tuyensinh.entity.XtToHopMon thm : allToHopMon) {
             toHopMap.put(thm.getMatohop(), thm);
         }
 
-        // Load conversions and group by (method + mon)
-        List<com.tuyensinh.entity.ScoreConversion> allConversions = new com.tuyensinh.repository.ScoreConversionRepository().findAll();
+        List<com.tuyensinh.entity.ScoreConversion> allConversions =
+                new com.tuyensinh.repository.ScoreConversionRepository().findAll();
+
+        System.out.println("Đã load bảng quy đổi điểm: " + allConversions.size());
+
         Map<String, List<com.tuyensinh.entity.ScoreConversion>> conversionMap = new HashMap<>();
+
         for (com.tuyensinh.entity.ScoreConversion sc : allConversions) {
-            String key = (sc.getPhuongThuc() == null ? "" : sc.getPhuongThuc().toUpperCase()) + "_" 
-                       + (sc.getMon() == null ? "" : sc.getMon().toUpperCase());
-            conversionMap.computeIfAbsent(key, k -> new ArrayList<>()).add(sc);
+
+            String key =
+                    (sc.getPhuongThuc() == null ? "" : sc.getPhuongThuc().toUpperCase())
+                            + "_"
+                            + (sc.getMon() == null ? "" : sc.getMon().toUpperCase());
+
+            conversionMap
+                    .computeIfAbsent(key, k -> new ArrayList<>())
+                    .add(sc);
         }
 
         List<Aspiration> eligibleAspirations = new ArrayList<>();
@@ -107,42 +148,67 @@ public class AspirationService {
         int missingScore = 0;
         int missingMajorConfig = 0;
 
+        int processed = 0;
+
+        System.out.println("Bắt đầu tính điểm từng nguyện vọng...");
+
         for (Aspiration aspiration : aspirations) {
-            // 1. Find best combination and base score (ĐTHXT)
-            BestScoreResult best = findBestScore(aspiration, scoresByCccd, majorToCombs, toHopMap, conversionMap);
-            if (best != null) {
-                BigDecimal dthxt = best.score;
-                aspiration.setToHop(best.combination);
-                
-                // 2. Calculate Root Score (ĐTHGXT)
-                // Section 3.2: ĐGNL does not use deviation table
-                BigDecimal dthgxt;
-                if ("DGNL".equalsIgnoreCase(aspiration.getPhuongThuc())) {
-                    dthgxt = dthxt;
-                } else {
-                    String rootComb = rootCombinations.get(aspiration.getMaNganh());
-                    BigDecimal deviation = getDeviation(aspiration.getToHop(), rootComb);
-                    dthgxt = dthxt.subtract(deviation);
-                }
-                aspiration.setDiemThxt(dthgxt); // Store ĐTHGXT in diem_thxt
+
+            processed++;
+
+            if (processed % 500 == 0) {
+                System.out.println("Đã xử lý: " + processed + "/" + aspirations.size());
             }
 
-            // 3. Resolve Bonus (ĐC) and Raw Priority (MĐƯT)
+            BestScoreResult best = findBestScore(
+                    aspiration,
+                    scoresByCccd,
+                    majorToCombs,
+                    toHopMap,
+                    conversionMap
+            );
+
+            if (best != null) {
+
+                BigDecimal dthxt = best.score;
+                aspiration.setToHop(best.combination);
+
+                BigDecimal dthgxt;
+
+                if ("DGNL".equalsIgnoreCase(aspiration.getPhuongThuc())) {
+
+                    dthgxt = dthxt;
+
+                } else {
+
+                    String rootComb = rootCombinations.get(aspiration.getMaNganh());
+                    BigDecimal deviation = getDeviation(aspiration.getToHop(), rootComb);
+
+                    dthgxt = dthxt.subtract(deviation);
+                }
+
+                aspiration.setDiemThxt(dthgxt);
+            }
+
             BigDecimal[] bonusData = resolveBonusDetailed(
                     bonusTotals,
                     aspiration.getCccd(),
                     aspiration.getMaNganh(),
                     aspiration.getToHop(),
-                    aspiration.getPhuongThuc());
-            
+                    aspiration.getPhuongThuc()
+            );
+
             BigDecimal dc = bonusData[0];
-            if (dc.compareTo(BigDecimal.valueOf(3)) > 0) dc = BigDecimal.valueOf(3); // Max 3.0
-            
+
+            if (dc.compareTo(BigDecimal.valueOf(3)) > 0) {
+                dc = BigDecimal.valueOf(3);
+            }
+
             BigDecimal mdut = bonusData[1];
-            
-            aspiration.setDiemCc(dc);       // diem_cc = ĐC
-            aspiration.setDiemUtxt(mdut);   // diem_utxt = MĐƯT
-            aspiration.setDiemCong(dc);     // UI uses diem_cong for "Điểm cộng"
+
+            aspiration.setDiemCc(dc);
+            aspiration.setDiemUtxt(mdut);
+            aspiration.setDiemCong(dc);
 
             if (aspiration.getDiemThxt() == null) {
                 aspiration.setKetQua("chuaxet");
@@ -150,22 +216,24 @@ public class AspirationService {
                 continue;
             }
 
-            // 4. Calculate Scaled Priority (ĐƯT)
             BigDecimal baseForPriority = aspiration.getDiemThxt().add(dc);
             BigDecimal dut = calculateScaledPriority(baseForPriority, mdut);
-            aspiration.setDiemUtqd(dut);    // diem_utqd = ĐƯT
 
-            // 5. Calculate Final Score (ĐXT)
+            aspiration.setDiemUtqd(dut);
             aspiration.setDiemXetTuyen(baseForPriority.add(dut));
 
-            if (!floors.containsKey(aspiration.getMaNganh()) || !quotas.containsKey(aspiration.getMaNganh())) {
+            if (!floors.containsKey(aspiration.getMaNganh())
+                    || !quotas.containsKey(aspiration.getMaNganh())) {
+
                 aspiration.setKetQua("chuacauhinh");
                 missingMajorConfig++;
                 continue;
             }
 
             BigDecimal floor = floors.get(aspiration.getMaNganh());
+
             if (aspiration.getDiemXetTuyen().compareTo(floor) < 0) {
+
                 aspiration.setKetQua("duoisan");
                 belowFloor++;
                 continue;
@@ -173,101 +241,175 @@ public class AspirationService {
 
             eligibleAspirations.add(aspiration);
         }
-        // ... (rest of the code for ranking and saving)
 
+        System.out.println("Tính điểm xong.");
+        System.out.println("Tổng nguyện vọng: " + aspirations.size());
+        System.out.println("Đủ điều kiện xét tuyển: " + eligibleAspirations.size());
+        System.out.println("Dưới sàn: " + belowFloor);
+        System.out.println("Chưa có điểm: " + missingScore);
+        System.out.println("Chưa cấu hình ngành: " + missingMajorConfig);
 
         Comparator<Aspiration> ranking = Comparator
-                .comparing(Aspiration::getDiemXetTuyen, Comparator.nullsLast(Comparator.reverseOrder()))
+                .comparing(
+                        Aspiration::getDiemXetTuyen,
+                        Comparator.nullsLast(Comparator.reverseOrder())
+                )
                 .thenComparing(a -> a.getThuTu() == null ? Integer.MAX_VALUE : a.getThuTu())
                 .thenComparing(a -> a.getId() == null ? Integer.MAX_VALUE : a.getId());
 
-        int passed = 0;
-        
-        // Group aspirations by candidate
+        System.out.println("Bắt đầu xếp tuyển theo chỉ tiêu...");
+
         Map<String, List<Aspiration>> candidateAspirations = new HashMap<>();
+
         for (Aspiration aspiration : eligibleAspirations) {
-            candidateAspirations.computeIfAbsent(aspiration.getCccd(), k -> new ArrayList<>()).add(aspiration);
+            candidateAspirations
+                    .computeIfAbsent(aspiration.getCccd(), k -> new ArrayList<>())
+                    .add(aspiration);
         }
 
-        // Sort each candidate's aspirations by priority (ascending)
         for (List<Aspiration> asps : candidateAspirations.values()) {
-            asps.sort(Comparator.comparing(a -> a.getThuTu() == null ? Integer.MAX_VALUE : a.getThuTu()));
+            asps.sort(
+                    Comparator.comparing(
+                            a -> a.getThuTu() == null ? Integer.MAX_VALUE : a.getThuTu()
+                    )
+            );
         }
 
-        java.util.Queue<String> applicantsToCheck = new java.util.LinkedList<>(candidateAspirations.keySet());
+        java.util.Queue<String> applicantsToCheck =
+                new java.util.LinkedList<>(candidateAspirations.keySet());
+
         Map<String, Integer> candidateNextAspIndex = new HashMap<>();
+
         for (String cccd : candidateAspirations.keySet()) {
             candidateNextAspIndex.put(cccd, 0);
         }
 
         Map<String, List<Aspiration>> currentAdmitted = new HashMap<>();
+
         for (String major : quotas.keySet()) {
             currentAdmitted.put(major, new ArrayList<>());
         }
 
+        int loopCount = 0;
+
         while (!applicantsToCheck.isEmpty()) {
+
+            loopCount++;
+
+            if (loopCount % 1000 == 0) {
+                System.out.println("Đang xếp tuyển, lượt xử lý: " + loopCount);
+            }
+
             String cccd = applicantsToCheck.poll();
+
             int attemptIdx = candidateNextAspIndex.get(cccd);
             List<Aspiration> asps = candidateAspirations.get(cccd);
 
-            if (attemptIdx >= asps.size()) {
-                continue; // out of aspirations
+            if (asps == null || attemptIdx >= asps.size()) {
+                continue;
             }
 
             Aspiration proposing = asps.get(attemptIdx);
             String major = proposing.getMaNganh();
 
             List<Aspiration> admittedInMajor = currentAdmitted.get(major);
+
             if (admittedInMajor == null) {
                 admittedInMajor = new ArrayList<>();
                 currentAdmitted.put(major, admittedInMajor);
             }
-            
+
             admittedInMajor.add(proposing);
             admittedInMajor.sort(ranking);
 
             int quota = quotas.getOrDefault(major, 0);
+
             if (admittedInMajor.size() > quota) {
-                // Reject the lowest ranked aspiration
+
                 Aspiration rejected = admittedInMajor.remove(admittedInMajor.size() - 1);
+
                 String rejectedCccd = rejected.getCccd();
-                candidateNextAspIndex.put(rejectedCccd, candidateNextAspIndex.get(rejectedCccd) + 1);
+
+                int nextIndex = candidateNextAspIndex.getOrDefault(rejectedCccd, 0) + 1;
+
+                candidateNextAspIndex.put(rejectedCccd, nextIndex);
+
                 applicantsToCheck.add(rejectedCccd);
             }
         }
 
+        System.out.println("Xếp tuyển xong.");
+
+        int passed = 0;
         int failed = 0;
+
         for (Aspiration aspiration : eligibleAspirations) {
             aspiration.setKetQua("khongtrungtuyen");
             failed++;
         }
-        
+
         for (List<Aspiration> admitted : currentAdmitted.values()) {
+
             for (Aspiration aspiration : admitted) {
-                aspiration.setKetQua("trungtuyen");
-                passed++;
-                failed--; // Adjust since we set everyone to failed initially
-            }
-        }
 
-        if (saveResult) {
-            repository.saveAll(aspirations);
-            
-            for (Map.Entry<String, List<Aspiration>> entry : currentAdmitted.entrySet()) {
-                String maNganh = entry.getKey();
-                List<Aspiration> admittedList = entry.getValue();
-                
-                if (!admittedList.isEmpty()) {
-                    Aspiration lastAdmitted = admittedList.get(admittedList.size() - 1);
-                    BigDecimal diemChuan = lastAdmitted.getDiemXetTuyen();
-                    
-                    nganhRepository.updateDiemChuan(maNganh, diemChuan);
-                } else {
-
+                if (!"trungtuyen".equalsIgnoreCase(aspiration.getKetQua())) {
+                    aspiration.setKetQua("trungtuyen");
+                    passed++;
+                    failed--;
                 }
             }
         }
-        return new AdmissionResult(aspirations.size(), passed, failed, belowFloor, missingScore, missingMajorConfig);
+
+        System.out.println("Trúng tuyển: " + passed);
+        System.out.println("Không trúng tuyển: " + failed);
+
+        if (saveResult) {
+
+            System.out.println("Đang lưu kết quả xét tuyển vào database...");
+
+            repository.saveAll(aspirations);
+
+            System.out.println("Đã lưu kết quả nguyện vọng.");
+
+            System.out.println("Đang cập nhật điểm chuẩn ngành...");
+
+            for (Map.Entry<String, List<Aspiration>> entry : currentAdmitted.entrySet()) {
+
+                String maNganh = entry.getKey();
+                List<Aspiration> admittedList = entry.getValue();
+
+                if (!admittedList.isEmpty()) {
+
+                    admittedList.sort(ranking);
+
+                    Aspiration lastAdmitted = admittedList.get(admittedList.size() - 1);
+                    BigDecimal diemChuan = lastAdmitted.getDiemXetTuyen();
+
+                    nganhRepository.updateDiemChuan(maNganh, diemChuan);
+
+                    System.out.println("Ngành " + maNganh + " - điểm chuẩn: " + diemChuan);
+                }
+            }
+
+            System.out.println("Đã cập nhật điểm chuẩn ngành.");
+        }
+
+        long endTime = System.currentTimeMillis();
+        double seconds = (endTime - startTime) / 1000.0;
+
+        System.out.println("======================================");
+        System.out.println("HOÀN TẤT XÉT TUYỂN");
+        System.out.println("Thời gian chạy: " + seconds + " giây");
+        System.out.println("======================================");
+
+        return new AdmissionResult(
+                aspirations.size(),
+                passed,
+                failed,
+                belowFloor,
+                missingScore,
+                missingMajorConfig
+        );
     }
 
     private BestScoreResult findBestScore(

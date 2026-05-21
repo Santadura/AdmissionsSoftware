@@ -10,7 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "xt_diemcongxetuyen")
+@Table(name = "xt_diemcongxettuyen")
 public class BonusScore {
 
     @Id
