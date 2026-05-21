@@ -16,22 +16,23 @@ public class AspirationRepository {
     public List<Object[]> findAllWithCandidate(String searchTerm) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             String hql = """
-                    SELECT a, c.ho, c.ten
+                    SELECT a, c.ho, c.ten, n.manganh, n.tennganh
                     FROM Aspiration a
-                    LEFT JOIN Candidate c ON a.cccd = cast(c.idthisinh as string)
+                    LEFT JOIN Candidate c ON a.cccd = c.cccd
+                    LEFT JOIN XtNganh n ON a.nganhId = n.idnganh
                     """;
             
             if (searchTerm != null && !searchTerm.trim().isEmpty()) {
                 String term = "%" + searchTerm.trim().toLowerCase() + "%";
                 hql += """
                     WHERE lower(a.cccd) LIKE :term
-                       OR lower(a.maNganh) LIKE :term
+                       OR lower(n.manganh) LIKE :term
                        OR lower(a.phuongThuc) LIKE :term
                        OR lower(a.toHop) LIKE :term
                        OR lower(a.ketQua) LIKE :term
                        OR lower(c.ho) LIKE :term
                        OR lower(c.ten) LIKE :term
-                       OR lower(a.hoTen) LIKE :term
+                       OR lower(concat(c.ho, ' ', c.ten)) LIKE :term
                     """;
                 hql += " ORDER BY a.id";
                 return session.createQuery(hql, Object[].class)
@@ -47,11 +48,12 @@ public class AspirationRepository {
     public List<Object[]> findAllSuccessfulWithCandidate() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             String hql = """
-                    SELECT a.maNganh, a.cccd, c.ho, c.ten, a.toHop, a.diemThxt, a.diemUtqd, a.diemCong, a.diemXetTuyen, a.phuongThuc, a.thuTu, a.hoTen
+                    SELECT n.manganh, a.cccd, c.ho, c.ten, a.toHop, a.diemThxt, a.diemUtqd, a.diemCong, a.diemXetTuyen, a.phuongThuc, a.thuTu
                     FROM Aspiration a
-                    LEFT JOIN Candidate c ON a.cccd = cast(c.idthisinh as string)
+                    LEFT JOIN Candidate c ON a.cccd = c.cccd
+                    LEFT JOIN XtNganh n ON a.nganhId = n.idnganh
                     WHERE a.ketQua = 'trungtuyen'
-                    ORDER BY a.maNganh, a.diemXetTuyen DESC
+                    ORDER BY n.manganh, a.diemXetTuyen DESC
                     """;
             return session.createQuery(hql, Object[].class).list();
         }
@@ -60,11 +62,12 @@ public class AspirationRepository {
     public List<Object[]> countSuccessfulByMethodAndMajor() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             String hql = """
-                    SELECT a.maNganh, a.phuongThuc, COUNT(a.id)
+                    SELECT n.manganh, a.phuongThuc, COUNT(a.id)
                     FROM Aspiration a
+                    LEFT JOIN XtNganh n ON a.nganhId = n.idnganh
                     WHERE a.ketQua = 'trungtuyen'
-                    GROUP BY a.maNganh, a.phuongThuc
-                    ORDER BY a.maNganh, a.phuongThuc
+                    GROUP BY n.manganh, a.phuongThuc
+                    ORDER BY n.manganh, a.phuongThuc
                     """;
             return session.createQuery(hql, Object[].class).list();
         }
@@ -79,6 +82,14 @@ public class AspirationRepository {
     public Aspiration findById(Integer id) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.get(Aspiration.class, id);
+        }
+    }
+
+    public List<Aspiration> findAllByCccd(String cccd) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("FROM Aspiration WHERE cccd = :cccd", Aspiration.class)
+                    .setParameter("cccd", cccd)
+                    .list();
         }
     }
 
@@ -131,8 +142,13 @@ public class AspirationRepository {
         Transaction transaction = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
+            int count = 0;
             for (Aspiration aspiration : aspirations) {
                 session.merge(aspiration);
+                if (++count % 50 == 0) {
+                    session.flush();
+                    session.clear();
+                }
             }
             transaction.commit();
         } catch (Exception e) {
@@ -143,42 +159,45 @@ public class AspirationRepository {
         }
     }
 
-    public Map<String, BigDecimal> findMajorFloors() {
+    public Map<Integer, BigDecimal[]> findMajorFloors() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             List<Object[]> rows = session.createNativeQuery(
-                    "SELECT manganh, n_diemsan FROM xt_nganh", Object[].class).list();
-            Map<String, BigDecimal> result = new HashMap<>();
+                    "SELECT idnganh, n_diemsan, n_diemtrungtuyen FROM xt_nganh", Object[].class).list();
+            Map<Integer, BigDecimal[]> result = new HashMap<>();
             for (Object[] row : rows) {
-                if (row[0] != null && row[1] != null) {
-                    result.put(row[0].toString(), (BigDecimal) row[1]);
+                if (row[0] != null) {
+                    result.put(((Number) row[0]).intValue(), new BigDecimal[]{
+                        row[1] == null ? BigDecimal.ZERO : (BigDecimal) row[1], // Floor
+                        row[2] == null ? BigDecimal.ZERO : (BigDecimal) row[2]  // Cutoff
+                    });
                 }
             }
             return result;
         }
     }
 
-    public Map<String, Integer> findMajorQuotas() {
+    public Map<Integer, Integer> findMajorQuotas() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             List<Object[]> rows = session.createNativeQuery(
-                    "SELECT manganh, n_chitieu FROM xt_nganh", Object[].class).list();
-            Map<String, Integer> result = new HashMap<>();
+                    "SELECT idnganh, n_chitieu FROM xt_nganh", Object[].class).list();
+            Map<Integer, Integer> result = new HashMap<>();
             for (Object[] row : rows) {
                 if (row[0] != null && row[1] != null) {
-                    result.put(row[0].toString(), ((Number) row[1]).intValue());
+                    result.put(((Number) row[0]).intValue(), ((Number) row[1]).intValue());
                 }
             }
             return result;
         }
     }
 
-    public Map<String, String> findMajorRootCombinations() {
+    public Map<Integer, String> findMajorRootCombinations() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             List<Object[]> rows = session.createNativeQuery(
-                    "SELECT manganh, n_tohopgoc FROM xt_nganh", Object[].class).list();
-            Map<String, String> result = new HashMap<>();
+                    "SELECT idnganh, n_tohopgoc FROM xt_nganh", Object[].class).list();
+            Map<Integer, String> result = new HashMap<>();
             for (Object[] row : rows) {
                 if (row[0] != null && row[1] != null) {
-                    result.put(row[0].toString(), row[1].toString());
+                    result.put(((Number) row[0]).intValue(), row[1].toString());
                 }
             }
             return result;

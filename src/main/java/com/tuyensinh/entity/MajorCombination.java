@@ -15,8 +15,8 @@ public class MajorCombination {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "manganh", length = 45)
-    private String maNganh;
+    @Column(name = "nganh_id")
+    private Integer nganhId;
 
     @Column(name = "matohop", length = 45)
     private String maToHop;
@@ -42,39 +42,6 @@ public class MajorCombination {
     @Column(name = "tb_keys", length = 45)
     private String tbKeys;
 
-    @Column(name = "N1", columnDefinition = "tinyint(1)")
-    private boolean n1;
-
-    @Column(name = "TO", columnDefinition = "tinyint(1)")
-    private boolean toan;
-
-    @Column(name = "LI", columnDefinition = "tinyint(1)")
-    private boolean ly;
-
-    @Column(name = "HO", columnDefinition = "tinyint(1)")
-    private boolean hoa;
-
-    @Column(name = "SI", columnDefinition = "tinyint(1)")
-    private boolean sinh;
-
-    @Column(name = "VA", columnDefinition = "tinyint(1)")
-    private boolean van;
-
-    @Column(name = "SU", columnDefinition = "tinyint(1)")
-    private boolean su;
-
-    @Column(name = "DI", columnDefinition = "tinyint(1)")
-    private boolean dia;
-
-    @Column(name = "TI", columnDefinition = "tinyint(1)")
-    private boolean tiengAnh;
-
-    @Column(name = "KHAC", columnDefinition = "tinyint(1)")
-    private boolean khac;
-
-    @Column(name = "KTPL", columnDefinition = "tinyint(1)")
-    private boolean ktpl;
-
     @Column(name = "dolech", columnDefinition = "decimal(6,2)")
     private Double doLech;
 
@@ -89,12 +56,12 @@ public class MajorCombination {
         this.id = id;
     }
 
-    public String getMaNganh() {
-        return maNganh;
+    public Integer getNganhId() {
+        return nganhId;
     }
 
-    public void setMaNganh(String maNganh) {
-        this.maNganh = maNganh;
+    public void setNganhId(Integer nganhId) {
+        this.nganhId = nganhId;
     }
 
     public String getMaToHop() {
@@ -159,94 +126,6 @@ public class MajorCombination {
 
     public void setTbKeys(String tbKeys) {
         this.tbKeys = tbKeys;
-    }
-
-    public boolean isN1() {
-        return n1;
-    }
-
-    public void setN1(boolean n1) {
-        this.n1 = n1;
-    }
-
-    public boolean isToan() {
-        return toan;
-    }
-
-    public void setToan(boolean toan) {
-        this.toan = toan;
-    }
-
-    public boolean isLy() {
-        return ly;
-    }
-
-    public void setLy(boolean ly) {
-        this.ly = ly;
-    }
-
-    public boolean isHoa() {
-        return hoa;
-    }
-
-    public void setHoa(boolean hoa) {
-        this.hoa = hoa;
-    }
-
-    public boolean isSinh() {
-        return sinh;
-    }
-
-    public void setSinh(boolean sinh) {
-        this.sinh = sinh;
-    }
-
-    public boolean isVan() {
-        return van;
-    }
-
-    public void setVan(boolean van) {
-        this.van = van;
-    }
-
-    public boolean isSu() {
-        return su;
-    }
-
-    public void setSu(boolean su) {
-        this.su = su;
-    }
-
-    public boolean isDia() {
-        return dia;
-    }
-
-    public void setDia(boolean dia) {
-        this.dia = dia;
-    }
-
-    public boolean isTiengAnh() {
-        return tiengAnh;
-    }
-
-    public void setTiengAnh(boolean tiengAnh) {
-        this.tiengAnh = tiengAnh;
-    }
-
-    public boolean isKhac() {
-        return khac;
-    }
-
-    public void setKhac(boolean khac) {
-        this.khac = khac;
-    }
-
-    public boolean isKtpl() {
-        return ktpl;
-    }
-
-    public void setKtpl(boolean ktpl) {
-        this.ktpl = ktpl;
     }
 
     public Double getDoLech() {

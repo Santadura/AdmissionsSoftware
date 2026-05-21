@@ -50,7 +50,7 @@ public class ScoreManagementPanel extends JPanel {
         JPanel topPanel = new JPanel(new BorderLayout(10, 10));
         topPanel.setOpaque(false);
 
-        JLabel lblTitle = new JLabel("Quản lý điểm thí sinh");
+        JLabel lblTitle = new JLabel("Quản lý điểm thí sinh 2025");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 30));
         lblTitle.setForeground(AppColor.TEXT_PRIMARY);
 
@@ -104,11 +104,23 @@ public class ScoreManagementPanel extends JPanel {
                 "SBD",
                 "Loại",
                 "Toán",
+                "Văn",
                 "Lý",
                 "Hóa",
                 "Sinh",
-                "Văn",
-                "Anh"
+                "Sử",
+                "Địa",
+                "N1_Thi",
+                "N1_CC",
+                "CNCN",
+                "CNNN",
+                "Tin",
+                "KTPL",
+                "NL1",
+                "NK1",
+                "NK2",
+                "NK3",
+                "NK4"
         };
 
         tableModel = new DefaultTableModel(columns, 0) {
@@ -123,6 +135,15 @@ public class ScoreManagementPanel extends JPanel {
         tableScores.setRowHeight(30);
         tableScores.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tableScores.setGridColor(AppColor.BORDER);
+        tableScores.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // Enable horizontal scrollbar
+
+        // Set specific widths for columns
+        int[] widths = {40, 100, 80, 60, 50, 50, 50, 50, 50, 50, 50, 55, 55, 55, 55, 50, 55, 55, 55, 55, 55, 55};
+        for (int i = 0; i < widths.length; i++) {
+            if (i < tableScores.getColumnCount()) {
+                tableScores.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
+            }
+        }
 
         JTableHeader header = tableScores.getTableHeader();
 
@@ -250,11 +271,23 @@ public class ScoreManagementPanel extends JPanel {
                         s.getSobaodanh(),
                         s.getDPhuongthuc(),
                         s.getTo(),
+                        s.getVa(),
                         s.getLi(),
                         s.getHo(),
                         s.getSi(),
-                        s.getVa(),
-                        s.getN1Thi()
+                        s.getSu(),
+                        s.getDi(),
+                        s.getN1Thi(),
+                        s.getN1Cc(),
+                        s.getCncn(),
+                        s.getCnnn(),
+                        s.getTi(),
+                        s.getKtpl(),
+                        s.getNl1(),
+                        s.getNk1(),
+                        s.getNk2(),
+                        s.getNk3(),
+                        s.getNk4()
                 });
             }
         }

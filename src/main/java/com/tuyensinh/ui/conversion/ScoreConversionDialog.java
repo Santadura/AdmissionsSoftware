@@ -10,9 +10,9 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class ScoreConversionDialog extends JDialog {
-    private JTextField txtPhuongThuc, txtToHop, txtMon, txtMaQuyDoi, txtPhanVi;
+    private JComboBox<String> cboPhuongThuc;
+    private JTextField txtToHop, txtMon, txtMaQuyDoi, txtPhanVi;
     private JTextField txtDiemA, txtDiemB, txtDiemC, txtDiemD;
-    private JButton btnSave, btnCancel;
 
     private ScoreConversion scoreConversion;
     private ScoreConversionService service;
@@ -22,62 +22,113 @@ public class ScoreConversionDialog extends JDialog {
         super(parent, sc == null ? "Thêm Bảng quy đổi" : "Sửa Bảng quy đổi", true);
         this.scoreConversion = sc == null ? new ScoreConversion() : sc;
         this.service = service;
-
         initUI();
         loadDataToForm();
-
-        setSize(500, 450);
-        setLocationRelativeTo(parent);
     }
 
     private void initUI() {
-        JPanel root = new JPanel(new BorderLayout(10, 10));
-        root.setBackground(AppColor.BACKGROUND);
-        root.setBorder(new EmptyBorder(15, 15, 15, 15));
+        setSize(500, 650);
+        setLocationRelativeTo(getOwner());
+        setLayout(new BorderLayout());
 
-        JPanel formPanel = new JPanel(new GridLayout(9, 2, 10, 10));
-        formPanel.setBackground(AppColor.SURFACE);
-        formPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(AppColor.BORDER),
-                new EmptyBorder(15, 15, 15, 15)
-        ));
-
-        formPanel.add(new JLabel("Phương thức:")); txtPhuongThuc = new JTextField(); formPanel.add(txtPhuongThuc);
-        formPanel.add(new JLabel("Tổ hợp:")); txtToHop = new JTextField(); formPanel.add(txtToHop);
-        formPanel.add(new JLabel("Môn:")); txtMon = new JTextField(); formPanel.add(txtMon);
-        formPanel.add(new JLabel("Mã quy đổi:")); txtMaQuyDoi = new JTextField(); formPanel.add(txtMaQuyDoi);
-        formPanel.add(new JLabel("Phân vị:")); txtPhanVi = new JTextField(); formPanel.add(txtPhanVi);
+        JPanel mainPanel = new JPanel(new GridBagLayout());
+        mainPanel.setBorder(new EmptyBorder(20, 25, 20, 25));
+        mainPanel.setBackground(AppColor.SURFACE);
         
-        formPanel.add(new JLabel("Điểm A:")); txtDiemA = new JTextField("0.0"); formPanel.add(txtDiemA);
-        formPanel.add(new JLabel("Điểm B:")); txtDiemB = new JTextField("0.0"); formPanel.add(txtDiemB);
-        formPanel.add(new JLabel("Điểm C:")); txtDiemC = new JTextField("0.0"); formPanel.add(txtDiemC);
-        formPanel.add(new JLabel("Điểm D:")); txtDiemD = new JTextField("0.0"); formPanel.add(txtDiemD);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.weightx = 1.0;
 
-        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        actionPanel.setOpaque(false);
+        int row = 0;
         
-        btnSave = new RoundedButton("Lưu thông tin", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
-        btnCancel = new RoundedButton("Hủy bỏ", new Color(158, 158, 158), new Color(117, 117, 117));
+        addLabel(mainPanel, "Phương thức:", gbc, row++);
+        cboPhuongThuc = new JComboBox<>(new String[]{"THPT", "DGNL", "VSAT"});
+        cboPhuongThuc.setPreferredSize(new Dimension(0, 35));
+        gbc.gridy = row++;
+        mainPanel.add(cboPhuongThuc, gbc);
+
+        addLabel(mainPanel, "Tổ hợp (nếu có):", gbc, row++);
+        txtToHop = new JTextField();
+        addTextField(mainPanel, txtToHop, gbc, row++);
+
+        addLabel(mainPanel, "Môn (nếu có):", gbc, row++);
+        txtMon = new JTextField();
+        addTextField(mainPanel, txtMon, gbc, row++);
+
+        addLabel(mainPanel, "Mã quy đổi:", gbc, row++);
+        txtMaQuyDoi = new JTextField();
+        addTextField(mainPanel, txtMaQuyDoi, gbc, row++);
+
+        addLabel(mainPanel, "Phân vị:", gbc, row++);
+        txtPhanVi = new JTextField();
+        addTextField(mainPanel, txtPhanVi, gbc, row++);
+
+        // Separator
+        gbc.gridy = row++;
+        gbc.insets = new Insets(15, 5, 5, 5);
+        JLabel lblSep = new JLabel("Thông số nội suy (A -> B quy đổi sang C -> D)");
+        lblSep.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+        lblSep.setForeground(AppColor.PRIMARY);
+        mainPanel.add(lblSep, gbc);
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        addLabel(mainPanel, "Mốc điểm thi đầu (A):", gbc, row++);
+        txtDiemA = new JTextField("0.0");
+        addTextField(mainPanel, txtDiemA, gbc, row++);
+
+        addLabel(mainPanel, "Mốc điểm thi cuối (B):", gbc, row++);
+        txtDiemB = new JTextField("0.0");
+        addTextField(mainPanel, txtDiemB, gbc, row++);
+
+        addLabel(mainPanel, "Mốc quy đổi đầu (C):", gbc, row++);
+        txtDiemC = new JTextField("0.0");
+        addTextField(mainPanel, txtDiemC, gbc, row++);
+
+        addLabel(mainPanel, "Mốc quy đổi cuối (D):", gbc, row++);
+        txtDiemD = new JTextField("0.0");
+        addTextField(mainPanel, txtDiemD, gbc, row++);
+
+        // Buttons
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        btnPanel.setBackground(AppColor.BACKGROUND);
         
-        actionPanel.add(btnSave);
-        actionPanel.add(btnCancel);
-
-        root.add(formPanel, BorderLayout.CENTER);
-        root.add(actionPanel, BorderLayout.SOUTH);
-        setContentPane(root);
-
+        RoundedButton btnSave = new RoundedButton("Lưu thông tin", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
+        RoundedButton btnCancel = new RoundedButton("Hủy bỏ", new Color(158, 158, 158), new Color(117, 117, 117));
+        
         btnSave.addActionListener(e -> saveAction());
         btnCancel.addActionListener(e -> dispose());
+        
+        btnPanel.add(btnCancel);
+        btnPanel.add(btnSave);
+
+        add(new JScrollPane(mainPanel), BorderLayout.CENTER);
+        add(btnPanel, BorderLayout.SOUTH);
+    }
+
+    private void addLabel(JPanel panel, String text, GridBagConstraints gbc, int row) {
+        gbc.gridy = row;
+        gbc.weighty = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        panel.add(label, gbc);
+    }
+
+    private void addTextField(JPanel panel, JTextField textField, GridBagConstraints gbc, int row) {
+        gbc.gridy = row;
+        textField.setPreferredSize(new Dimension(0, 35));
+        textField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        panel.add(textField, gbc);
     }
 
     private void loadDataToForm() {
         if (scoreConversion.getIdqd() != null) {
-            txtPhuongThuc.setText(scoreConversion.getPhuongThuc());
+            cboPhuongThuc.setSelectedItem(scoreConversion.getPhuongThuc());
             txtToHop.setText(scoreConversion.getToHop());
             txtMon.setText(scoreConversion.getMon());
             txtMaQuyDoi.setText(scoreConversion.getMaQuyDoi());
             txtPhanVi.setText(scoreConversion.getPhanVi());
-            
             txtDiemA.setText(scoreConversion.getDiemA() != null ? String.valueOf(scoreConversion.getDiemA()) : "0.0");
             txtDiemB.setText(scoreConversion.getDiemB() != null ? String.valueOf(scoreConversion.getDiemB()) : "0.0");
             txtDiemC.setText(scoreConversion.getDiemC() != null ? String.valueOf(scoreConversion.getDiemC()) : "0.0");
@@ -87,12 +138,11 @@ public class ScoreConversionDialog extends JDialog {
 
     private void saveAction() {
         try {
-            scoreConversion.setPhuongThuc(txtPhuongThuc.getText().trim());
+            scoreConversion.setPhuongThuc(cboPhuongThuc.getSelectedItem().toString());
             scoreConversion.setToHop(txtToHop.getText().trim());
             scoreConversion.setMon(txtMon.getText().trim());
             scoreConversion.setMaQuyDoi(txtMaQuyDoi.getText().trim());
             scoreConversion.setPhanVi(txtPhanVi.getText().trim());
-
             scoreConversion.setDiemA(Double.parseDouble(txtDiemA.getText().trim()));
             scoreConversion.setDiemB(Double.parseDouble(txtDiemB.getText().trim()));
             scoreConversion.setDiemC(Double.parseDouble(txtDiemC.getText().trim()));

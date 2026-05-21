@@ -11,6 +11,12 @@ import com.tuyensinh.entity.XtNganh;
 
 public class NganhRepository {
 
+    public XtNganh findById(Integer id) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.get(XtNganh.class, id);
+        }
+    }
+
     public List<XtNganh> findAll() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery("FROM XtNganh ORDER BY manganh", XtNganh.class).list();
@@ -21,6 +27,24 @@ public class NganhRepository {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             String hql = "FROM XtNganh WHERE manganh LIKE :kw OR tennganh LIKE :kw ORDER BY manganh";
             Query<XtNganh> q = session.createQuery(hql, XtNganh.class);
+            q.setParameter("kw", "%" + keyword + "%");
+            return q.list();
+        }
+    }
+
+    public List<Object[]> findAllWithAspirationCount() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "SELECT n, (SELECT COUNT(a.id) FROM Aspiration a WHERE a.nganhId = n.idnganh) " +
+                        "FROM XtNganh n ORDER BY n.manganh";
+            return session.createQuery(hql, Object[].class).list();
+        }
+    }
+
+    public List<Object[]> searchWithAspirationCount(String keyword) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "SELECT n, (SELECT COUNT(a.id) FROM Aspiration a WHERE a.nganhId = n.idnganh) " +
+                        "FROM XtNganh n WHERE n.manganh LIKE :kw OR n.tennganh LIKE :kw ORDER BY n.manganh";
+            Query<Object[]> q = session.createQuery(hql, Object[].class);
             q.setParameter("kw", "%" + keyword + "%");
             return q.list();
         }
@@ -63,11 +87,12 @@ public class NganhRepository {
         }
     }
 
-    public boolean existsByManganh(String manganh) {
+    public boolean existsByManganh(String manganh, Integer namTuyenSinh) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Query<Long> q = session.createQuery(
-                "SELECT COUNT(*) FROM XtNganh WHERE manganh = :ma", Long.class);
+                "SELECT COUNT(*) FROM XtNganh WHERE manganh = :ma AND namTuyenSinh = :nam", Long.class);
             q.setParameter("ma", manganh);
+            q.setParameter("nam", namTuyenSinh);
             return q.uniqueResult() > 0;
         }
     }
@@ -76,24 +101,32 @@ public class NganhRepository {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             tx = session.beginTransaction();
+            int count = 0;
             for (XtNganh n : list) {
-                if (!existsByManganhInSession(session, n.getManganh())) {
-                    session.save(n);
+                XtNganh existing = findByManganhInSession(session, n.getManganh(), n.getNamTuyenSinh());
+                if (existing == null) {
+                    // Nếu là ngành mới và nChitieu null, gán mặc định 0 để tránh lỗi DB
+                    if (n.getNChitieu() == null) n.setNChitieu(0);
+                    session.persist(n);
                 } else {
-                    Query<XtNganh> q = session.createQuery(
-                        "FROM XtNganh WHERE manganh = :ma", XtNganh.class);
-                    q.setParameter("ma", n.getManganh());
-                    XtNganh existing = q.uniqueResult();
-                    if (existing != null) {
-                        existing.setTennganh(n.getTennganh());
-                        existing.setNChitieu(n.getNChitieu());
-                        existing.setNDiemsan(n.getNDiemsan());
-                        existing.setNTohopgoc(n.getNTohopgoc());
-                        existing.setNDgnl(n.getNDgnl());
-                        existing.setNThpt(n.getNThpt());
-                        existing.setNVsat(n.getNVsat());
-                        session.update(existing);
-                    }
+                    // Chỉ cập nhật các trường không null từ Excel
+                    if (n.getTennganh() != null) existing.setTennganh(n.getTennganh());
+                    if (n.getNChitieu() != null) existing.setNChitieu(n.getNChitieu());
+                    if (n.getNDiemsan() != null) existing.setNDiemsan(n.getNDiemsan());
+                    if (n.getNTohopgoc() != null) existing.setNTohopgoc(n.getNTohopgoc());
+                    if (n.getNDgnl() != null) existing.setNDgnl(n.getNDgnl());
+                    if (n.getNThpt() != null) existing.setNThpt(n.getNThpt());
+                    if (n.getNVsat() != null) existing.setNVsat(n.getNVsat());
+                    if (n.getSlXtt() != null) existing.setSlXtt(n.getSlXtt());
+                    if (n.getSlDgnl() != null) existing.setSlDgnl(n.getSlDgnl());
+                    if (n.getSlVsat() != null) existing.setSlVsat(n.getSlVsat());
+                    if (n.getSlThpt() != null) existing.setSlThpt(n.getSlThpt());
+                    session.merge(existing);
+                }
+                
+                if (++count % 20 == 0) {
+                    session.flush();
+                    session.clear();
                 }
             }
             tx.commit();
@@ -103,10 +136,21 @@ public class NganhRepository {
         }
     }
 
-    private boolean existsByManganhInSession(Session session, String manganh) {
-        Query<Long> q = session.createQuery(
-            "SELECT COUNT(*) FROM XtNganh WHERE manganh = :ma", Long.class);
+    public XtNganh findByManganh(String manganh) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Query<XtNganh> q = session.createQuery(
+                "FROM XtNganh WHERE manganh = :ma", XtNganh.class);
+            q.setParameter("ma", manganh);
+            q.setMaxResults(1);
+            return q.uniqueResult();
+        }
+    }
+
+    private XtNganh findByManganhInSession(Session session, String manganh, Integer namTuyenSinh) {
+        Query<XtNganh> q = session.createQuery(
+            "FROM XtNganh WHERE manganh = :ma AND namTuyenSinh = :nam", XtNganh.class);
         q.setParameter("ma", manganh);
-        return q.uniqueResult() > 0;
+        q.setParameter("nam", namTuyenSinh);
+        return q.uniqueResult();
     }
 }

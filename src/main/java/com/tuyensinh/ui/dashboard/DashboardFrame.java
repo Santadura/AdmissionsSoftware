@@ -44,7 +44,7 @@ public class DashboardFrame extends JFrame {
         header.setBackground(AppColor.PRIMARY);
         header.setBorder(new EmptyBorder(15, 20, 15, 20));
 
-        JLabel lblHeader = new JLabel("HỆ THỐNG TUYỂN SINH - ADMIN");
+        JLabel lblHeader = new JLabel("HỆ THỐNG TUYỂN SINH 2025 - ADMIN");
         lblHeader.setForeground(AppColor.TEXT_LIGHT);
         lblHeader.setFont(new Font("Segoe UI", Font.BOLD, 26));
 

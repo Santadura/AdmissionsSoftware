@@ -1,68 +1,137 @@
 package com.tuyensinh.repository;
 
-import com.tuyensinh.config.HibernateUtil;
-import com.tuyensinh.entity.CandidateScore;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
-import org.hibernate.query.Query;
-
 import java.util.List;
 
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import org.hibernate.exception.ConstraintViolationException;
+import org.hibernate.query.Query;
+
+import com.tuyensinh.config.HibernateUtil;
+import com.tuyensinh.entity.CandidateScore;
+
 public class CandidateScoreRepository {
+
 
     // ================= SAVE =================
 
     public void save(CandidateScore score) {
-
         Transaction transaction = null;
-
-        try (Session session = HibernateUtil
-                .getSessionFactory()
-                .openSession()) {
-
+        Session session = null;
+        try {
+            session = HibernateUtil.getSessionFactory().openSession();
             transaction = session.beginTransaction();
-
-            session.save(score);
-
-            transaction.commit();
-
-        } catch (Exception e) {
-
-            if (transaction != null) {
-                transaction.rollback();
+            CandidateScore existing = findByCccdAndPhuongThuc(session, score.getCccd(), score.getDPhuongthuc());
+            if (existing == null) {
+                session.persist(score);
+            } else {
+                updateFields(existing, score);
+                session.merge(existing);
             }
-
-            throw new RuntimeException(
-                    "Lỗi thêm điểm: " + e.getMessage()
-            );
+            transaction.commit();
+                } catch (org.hibernate.exception.ConstraintViolationException e) {
+            if (transaction != null && transaction.isActive()) transaction.rollback();
+            throw new RuntimeException("CCCD thí sinh không tồn tại trong hệ thống (foreign key violation)!");
+        } catch (Exception e) {
+            if (transaction != null && transaction.isActive()) transaction.rollback();
+            throw new RuntimeException("Lỗi thêm điểm: " + e.getMessage(), e);
+        } finally {
+            if (session != null) session.close();
         }
     }
 
-    // ================= UPDATE =================
-
     public void update(CandidateScore score) {
-
         Transaction transaction = null;
-
-        try (Session session = HibernateUtil
-                .getSessionFactory()
-                .openSession()) {
-
+        Session session = null;
+        try {
+            session = HibernateUtil.getSessionFactory().openSession();
             transaction = session.beginTransaction();
-
-            session.update(score);
-
-            transaction.commit();
-
-        } catch (Exception e) {
-
-            if (transaction != null) {
-                transaction.rollback();
+            CandidateScore existing = findByCccdAndPhuongThuc(session, score.getCccd(), score.getDPhuongthuc());
+            if (existing != null && !existing.getIddiemthi().equals(score.getIddiemthi())) {
+                throw new RuntimeException("Điểm của thí sinh " + score.getCccd() + " cho phương thức thi " + score.getDPhuongthuc() + " đã tồn tại!");
             }
+            session.merge(score);
+            transaction.commit();
+                } catch (org.hibernate.exception.ConstraintViolationException e) {
+            if (transaction != null && transaction.isActive()) transaction.rollback();
+            throw new RuntimeException("CCCD thí sinh không tồn tại trong hệ thống (foreign key violation)!");
+        } catch (Exception e) {
+            if (transaction != null && transaction.isActive()) transaction.rollback();
+            throw new RuntimeException("Lỗi cập nhật điểm: " + e.getMessage(), e);
+        } finally {
+            if (session != null) session.close();
+        }
+    }
 
-            throw new RuntimeException(
-                    "Lỗi cập nhật điểm: " + e.getMessage()
-            );
+    public void saveAll(List<CandidateScore> scores) {
+        Transaction transaction = null;
+        Session session = null;
+        try {
+            session = HibernateUtil.getSessionFactory().openSession();
+            transaction = session.beginTransaction();
+            int count = 0;
+            for (CandidateScore score : scores) {
+                CandidateScore existing = findByCccdAndPhuongThuc(session, score.getCccd(), score.getDPhuongthuc());
+                if (existing == null) {
+                    session.persist(score);
+                } else {
+                    updateFields(existing, score);
+                    session.merge(existing);
+                }
+                
+                if (++count % 20 == 0) {
+                    session.flush();
+                    session.clear();
+                }
+            }
+            transaction.commit();
+                } catch (org.hibernate.exception.ConstraintViolationException e) {
+            if (transaction != null && transaction.isActive()) transaction.rollback();
+            throw new RuntimeException("CCCD thí sinh không tồn tại trong hệ thống (foreign key violation)!");
+        } catch (Exception e) {
+            if (transaction != null && transaction.isActive()) transaction.rollback();
+            throw new RuntimeException("Lỗi lưu điểm: " + e.getMessage(), e);
+        } finally {
+            if (session != null) session.close();
+        }
+    }
+
+    private CandidateScore findByCccdAndPhuongThuc(Session session, String cccd, String phuongThuc) {
+        Query<CandidateScore> query = session.createQuery(
+            "FROM CandidateScore WHERE cccd = :cccd AND dPhuongthuc = :pt", CandidateScore.class);
+        query.setParameter("cccd", cccd);
+        query.setParameter("pt", phuongThuc);
+        return query.uniqueResult();
+    }
+
+    private void updateFields(CandidateScore target, CandidateScore source) {
+        if (source.getSobaodanh() != null) target.setSobaodanh(source.getSobaodanh());
+        if (source.getTo() != null) target.setTo(source.getTo());
+        if (source.getLi() != null) target.setLi(source.getLi());
+        if (source.getHo() != null) target.setHo(source.getHo());
+        if (source.getSi() != null) target.setSi(source.getSi());
+        if (source.getSu() != null) target.setSu(source.getSu());
+        if (source.getDi() != null) target.setDi(source.getDi());
+        if (source.getVa() != null) target.setVa(source.getVa());
+        if (source.getN1Thi() != null) target.setN1Thi(source.getN1Thi());
+        if (source.getN1Cc() != null) target.setN1Cc(source.getN1Cc());
+        if (source.getCncn() != null) target.setCncn(source.getCncn());
+        if (source.getCnnn() != null) target.setCnnn(source.getCnnn());
+        if (source.getTi() != null) target.setTi(source.getTi());
+        if (source.getKtpl() != null) target.setKtpl(source.getKtpl());
+        if (source.getNl1() != null) target.setNl1(source.getNl1());
+        if (source.getNk1() != null) target.setNk1(source.getNk1());
+        if (source.getNk2() != null) target.setNk2(source.getNk2());
+        if (source.getNk3() != null) target.setNk3(source.getNk3());
+        if (source.getNk4() != null) target.setNk4(source.getNk4());
+    }
+
+    public List<CandidateScore> findByCccd(String cccd) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Query<CandidateScore> query = session.createQuery(
+                "FROM CandidateScore WHERE cccd = :cccd ORDER BY dPhuongthuc", CandidateScore.class);
+            query.setParameter("cccd", cccd);
+            return query.list();
         }
     }
 
@@ -89,6 +158,9 @@ public class CandidateScoreRepository {
 
             transaction.commit();
 
+                } catch (org.hibernate.exception.ConstraintViolationException e) {
+            if (transaction != null && transaction.isActive()) transaction.rollback();
+            throw new RuntimeException("CCCD thí sinh không tồn tại trong hệ thống (foreign key violation)!");
         } catch (Exception e) {
 
             if (transaction != null) {

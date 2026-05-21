@@ -1,6 +1,12 @@
 package com.tuyensinh.entity;
-import jakarta.persistence.*;
 import java.math.BigDecimal;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 @Entity
 @Table(name = "xt_diemthixettuyen")
 public class CandidateScore {
@@ -8,14 +14,14 @@ public class CandidateScore {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "iddiemthi")
     private Integer iddiemthi;
-    @Column(name = "cccd", length = 20)
+    @Column(name = "thisinh_cccd", length = 12)
     private String cccd;
     @Column(name = "sobaodanh", length = 45)
     private String sobaodanh;
     // THPT / VSAT / DGNL
-    @Column(name = "d_phuongthuc", length = 10)
+    @Column(name = "d_phuongthuc", length = 45)
     private String dPhuongthuc;
-    @Column(name = "TO")
+    @Column(name = "`TO`")
     private BigDecimal to;
     @Column(name = "LI")
     private BigDecimal li;
@@ -47,6 +53,10 @@ public class CandidateScore {
     private BigDecimal nk1;
     @Column(name = "NK2")
     private BigDecimal nk2;
+    @Column(name = "NK3")
+    private BigDecimal nk3;
+    @Column(name = "NK4")
+    private BigDecimal nk4;
     public CandidateScore() {
     }
     public Integer getIddiemthi() {
@@ -168,5 +178,17 @@ public class CandidateScore {
     }
     public void setNk2(BigDecimal nk2) {
         this.nk2 = nk2;
+    }
+    public BigDecimal getNk3() {
+        return nk3;
+    }
+    public void setNk3(BigDecimal nk3) {
+        this.nk3 = nk3;
+    }
+    public BigDecimal getNk4() {
+        return nk4;
+    }
+    public void setNk4(BigDecimal nk4) {
+        this.nk4 = nk4;
     }
 }

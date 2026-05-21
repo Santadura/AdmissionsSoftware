@@ -59,7 +59,7 @@ public class LoginFrame extends JFrame {
         titlePanel.setOpaque(false);
         titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
 
-        JLabel lblTitle = new JLabel("HỆ THỐNG TUYỂN SINH");
+        JLabel lblTitle = new JLabel("HỆ THỐNG TUYỂN SINH 2025");
         lblTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblTitle.setForeground(AppColor.PRIMARY);

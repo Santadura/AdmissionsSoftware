@@ -36,7 +36,7 @@ public class MajorManagementPanel extends JPanel {
         JPanel topPanel = new JPanel(new BorderLayout(10, 10));
         topPanel.setOpaque(false);
 
-        JLabel lblTitle = new JLabel("Quản lý ngành tuyển sinh");
+        JLabel lblTitle = new JLabel("Quản lý ngành tuyển sinh 2025");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 30));
         lblTitle.setForeground(AppColor.TEXT_PRIMARY);
         topPanel.add(lblTitle, BorderLayout.NORTH);
@@ -59,7 +59,7 @@ public class MajorManagementPanel extends JPanel {
         topPanel.add(searchBar, BorderLayout.SOUTH);
 
         // --- TABLE ---
-        String[] cols = {"ID", "Mã ngành", "Tên ngành", "Tổ hợp gốc", "Chỉ tiêu", "Điểm sàn", "THPT", "ĐGNL", "VSAT"};
+        String[] cols = {"ID", "Mã ngành", "Tên ngành", "Năm TS", "Tổ hợp gốc", "Chỉ tiêu", "Điểm sàn", "Điểm chuẩn", "Số NV", "THPT", "ĐGNL", "VSAT"};
         tableModel = new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -69,9 +69,11 @@ public class MajorManagementPanel extends JPanel {
         table.setSelectionBackground(new Color(227, 242, 253));
         table.setGridColor(AppColor.BORDER);
         table.getColumnModel().getColumn(0).setMaxWidth(50);
-        table.getColumnModel().getColumn(6).setMaxWidth(55);
-        table.getColumnModel().getColumn(7).setMaxWidth(55);
-        table.getColumnModel().getColumn(8).setMaxWidth(55);
+        table.getColumnModel().getColumn(3).setMaxWidth(60);
+        table.getColumnModel().getColumn(8).setMaxWidth(60); // Số NV
+        table.getColumnModel().getColumn(9).setMaxWidth(55); // THPT
+        table.getColumnModel().getColumn(10).setMaxWidth(55); // ĐGNL
+        table.getColumnModel().getColumn(11).setMaxWidth(55); // VSAT
 
         JTableHeader header = table.getTableHeader();
         header.setBackground(AppColor.PRIMARY);
@@ -124,12 +126,19 @@ public class MajorManagementPanel extends JPanel {
 
     private void loadData(String kw) {
         tableModel.setRowCount(0);
-        currentList = service.search(kw);
-        for (XtNganh n : currentList) {
+        List<Object[]> stats = service.searchWithStats(kw);
+        currentList = new java.util.ArrayList<>();
+        for (Object[] row : stats) {
+            XtNganh n = (XtNganh) row[0];
+            Long count = (Long) row[1];
+            currentList.add(n);
             tableModel.addRow(new Object[]{
                 n.getIdnganh(), n.getManganh(), n.getTennganh(),
+                n.getNamTuyenSinh() != null ? n.getNamTuyenSinh() : "",
                 n.getNTohopgoc(), n.getNChitieu(),
                 n.getNDiemsan() != null ? n.getNDiemsan() : "",
+                n.getNDiemtrungtuyen() != null ? n.getNDiemtrungtuyen() : "",
+                count,
                 "1".equals(n.getNThpt()) ? "✓" : "",
                 "1".equals(n.getNDgnl()) ? "✓" : "",
                 "1".equals(n.getNVsat()) ? "✓" : ""
@@ -147,7 +156,7 @@ public class MajorManagementPanel extends JPanel {
                 loadData(txtSearch.getText().trim());
                 JOptionPane.showMessageDialog(this, "Thêm ngành thành công!");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, com.tuyensinh.ui.ErrorHandler.getFriendlyMessage(ex), "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -165,7 +174,7 @@ public class MajorManagementPanel extends JPanel {
                 loadData(txtSearch.getText().trim());
                 JOptionPane.showMessageDialog(this, "Cập nhật ngành thành công!");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, com.tuyensinh.ui.ErrorHandler.getFriendlyMessage(ex), "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -182,7 +191,7 @@ public class MajorManagementPanel extends JPanel {
                 loadData(txtSearch.getText().trim());
                 JOptionPane.showMessageDialog(this, "Xóa ngành thành công!");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, com.tuyensinh.ui.ErrorHandler.getFriendlyMessage(ex), "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         }
     }

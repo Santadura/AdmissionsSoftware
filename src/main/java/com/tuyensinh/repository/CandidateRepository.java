@@ -15,10 +15,10 @@ public class CandidateRepository {
             transaction = session.beginTransaction();
             int count = 0;
             for (Candidate candidate : candidates) {
-                if (!existsByCccd(session, candidate.getCccd())) {
-                    session.save(candidate);
+                Candidate existing = findByCccd(session, candidate.getCccd());
+                if (existing == null) {
+                    session.persist(candidate);
                 } else {
-                    Candidate existing = findByCccd(session, candidate.getCccd());
                     existing.setHo(candidate.getHo());
                     existing.setTen(candidate.getTen());
                     existing.setNgaySinh(candidate.getNgaySinh());
@@ -26,7 +26,11 @@ public class CandidateRepository {
                     existing.setNoiSinh(candidate.getNoiSinh());
                     existing.setDoiTuong(candidate.getDoiTuong());
                     existing.setKhuVuc(candidate.getKhuVuc());
-                    session.update(existing);
+                    existing.setDienThoai(candidate.getDienThoai());
+                    existing.setEmail(candidate.getEmail());
+                    existing.setNamTuyenSinh(candidate.getNamTuyenSinh());
+                    existing.setUpdatedAt(java.time.LocalDate.now());
+                    session.merge(existing);
                 }
                 
                 if (++count % 20 == 0) {
@@ -86,16 +90,54 @@ public class CandidateRepository {
             return query.uniqueResult();
         }
     }
+
+    public List<Object[]> getStatisticsByObject() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "SELECT doiTuong, COUNT(*) FROM Candidate GROUP BY doiTuong";
+            return session.createQuery(hql, Object[].class).list();
+        }
+    }
+
+    public List<Object[]> getStatisticsByRegion() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "SELECT khuVuc, COUNT(*) FROM Candidate GROUP BY khuVuc";
+            return session.createQuery(hql, Object[].class).list();
+        }
+    }
     
+    public void save(Candidate candidate) {
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+            session.persist(candidate);
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
+            throw new RuntimeException("Lỗi lưu thí sinh: " + e.getMessage());
+        }
+    }
+
     public void update(Candidate candidate) {
         Transaction transaction = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
-            session.update(candidate);
+            session.merge(candidate);
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
-            throw new RuntimeException("Lỗi cập nhật: " + e.getMessage());
+            throw new RuntimeException("Lỗi cập nhật thí sinh: " + e.getMessage());
+        }
+    }
+
+    public void delete(Candidate candidate) {
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+            session.remove(session.contains(candidate) ? candidate : session.merge(candidate));
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
+            throw new RuntimeException("Lỗi xóa thí sinh: " + e.getMessage());
         }
     }
     
@@ -105,13 +147,12 @@ public class CandidateRepository {
         }
     }
     
-    private boolean existsByCccd(Session session, String cccd) {
-        Query<Long> query = session.createQuery(
-            "SELECT COUNT(*) FROM Candidate WHERE cccd = :cccd", Long.class);
-        query.setParameter("cccd", cccd);
-        return query.uniqueResult() > 0;
+    public Candidate findByCccd(String cccd) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return findByCccd(session, cccd);
+        }
     }
-    
+
     private Candidate findByCccd(Session session, String cccd) {
         Query<Candidate> query = session.createQuery(
             "FROM Candidate WHERE cccd = :cccd", Candidate.class);

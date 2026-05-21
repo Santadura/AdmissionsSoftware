@@ -36,6 +36,9 @@ import com.tuyensinh.ui.RoundedButton;
 public class AspirationManagementPanel extends JPanel {
 
     private final AspirationService service;
+    private final com.tuyensinh.service.NganhService nganhService = new com.tuyensinh.service.NganhService();
+    private final com.tuyensinh.service.CandidateService candidateService = new com.tuyensinh.service.CandidateService();
+    private final com.tuyensinh.service.MajorCombinationService majorCombService = new com.tuyensinh.service.MajorCombinationService();
     private JTable tableAspirations;
     private DefaultTableModel tableModel;
     private JTextField txtSearch;
@@ -54,7 +57,7 @@ public class AspirationManagementPanel extends JPanel {
         JPanel topPanel = new JPanel(new BorderLayout(10, 10));
         topPanel.setOpaque(false);
 
-        JLabel lblTitle = new JLabel("Quản lý nguyện vọng và xét tuyển");
+        JLabel lblTitle = new JLabel("Quản lý nguyện vọng và xét tuyển 2025");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 30));
         lblTitle.setForeground(AppColor.TEXT_PRIMARY);
         topPanel.add(lblTitle, BorderLayout.NORTH);
@@ -77,7 +80,7 @@ public class AspirationManagementPanel extends JPanel {
             loadData();
         });
 
-        searchPanel.add(new JLabel("CCCD / mã ngành / phương thức / kết quả:"));
+        searchPanel.add(new JLabel("Họ tên / CCCD / mã ngành / phương thức / kết quả:"));
         searchPanel.add(txtSearch);
         searchPanel.add(btnSearch);
         searchPanel.add(btnRefresh);
@@ -86,7 +89,7 @@ public class AspirationManagementPanel extends JPanel {
         add(topPanel, BorderLayout.NORTH);
 
         String[] columns = {
-                "ID", "CCCD", "Họ tên", "Nguyện vọng", "Mã ngành", "Tổ hợp",
+                "ID", "CCCD", "Họ tên", "Nguyện vọng", "Mã Ngành", "Tổ hợp",
                 "Điểm THM", "Điểm cộng", "Điểm UT", "Điểm XT", "Kết quả", "Phương thức"
         };
         tableModel = new DefaultTableModel(columns, 0) {
@@ -123,12 +126,21 @@ public class AspirationManagementPanel extends JPanel {
         actionPanel.setOpaque(false);
 
         JButton btnRunAdmission = new RoundedButton("Chạy xét tuyển", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
+        JButton btnImport = new RoundedButton("Import Excel", new Color(33, 150, 243), new Color(25, 118, 210));
         JButton btnReport = new RoundedButton("Báo cáo", new Color(100, 100, 200), new Color(70, 70, 170));
         JButton btnAdd = new RoundedButton("Thêm", new Color(67, 160, 71), new Color(46, 125, 50));
         JButton btnEdit = new RoundedButton("Sửa", new Color(251, 140, 0), new Color(239, 108, 0));
         JButton btnDelete = new RoundedButton("Xóa", new Color(211, 47, 47), new Color(183, 28, 28));
 
         btnRunAdmission.addActionListener(e -> runAdmission());
+        btnImport.addActionListener(e -> {
+            AspirationImportDialog dialog = new AspirationImportDialog(
+                (javax.swing.JFrame) SwingUtilities.getWindowAncestor(this), service);
+            dialog.setVisible(true);
+            if (dialog.isImported()) {
+                loadData();
+            }
+        });
         btnReport.addActionListener(e -> showReportDialog());
         btnAdd.addActionListener(e -> openFormDialog(null));
         btnEdit.addActionListener(e -> editSelected());
@@ -143,6 +155,7 @@ public class AspirationManagementPanel extends JPanel {
         });
 
         actionPanel.add(btnRunAdmission);
+        actionPanel.add(btnImport);
         actionPanel.add(btnReport);
         actionPanel.add(btnAdd);
         actionPanel.add(btnEdit);
@@ -159,14 +172,14 @@ public class AspirationManagementPanel extends JPanel {
             if (row[1] != null || row[2] != null) {
                 hoTen = (row[1] == null ? "" : row[1].toString()) + " " + (row[2] == null ? "" : row[2].toString());
             } else {
-                hoTen = aspiration.getHoTen() != null ? aspiration.getHoTen() : "";
+                hoTen = "";
             }
             tableModel.addRow(new Object[]{
                     aspiration.getId(),
                     aspiration.getCccd(),
                     hoTen.trim(),
                     aspiration.getThuTu(),
-                    aspiration.getMaNganh(),
+                    row[3] == null ? "" : row[3].toString(),
                     aspiration.getToHop(),
                     aspiration.getDiemThxt(),
                     aspiration.getDiemCong(), // Sử dụng DiemCong (cột diem_cong) thay vì DiemCc
@@ -188,6 +201,20 @@ public class AspirationManagementPanel extends JPanel {
             return;
         }
 
+        // Create a loading dialog
+        JDialog loadingDialog = new JDialog((javax.swing.JFrame) SwingUtilities.getWindowAncestor(this), "Đang xử lý", true);
+        JPanel p = new JPanel(new BorderLayout(10, 10));
+        p.setBorder(new EmptyBorder(20, 30, 20, 30));
+        p.add(new JLabel("Hệ thống đang chạy xét tuyển, vui lòng đợi trong giây lát..."), BorderLayout.CENTER);
+        
+        javax.swing.JProgressBar progressBar = new javax.swing.JProgressBar();
+        progressBar.setIndeterminate(true);
+        p.add(progressBar, BorderLayout.SOUTH);
+        
+        loadingDialog.add(p);
+        loadingDialog.pack();
+        loadingDialog.setLocationRelativeTo(this);
+
         SwingWorker<AdmissionResult, Void> worker = new SwingWorker<>() {
             @Override
             protected AdmissionResult doInBackground() {
@@ -196,6 +223,7 @@ public class AspirationManagementPanel extends JPanel {
 
             @Override
             protected void done() {
+                loadingDialog.dispose();
                 try {
                     AdmissionResult result = get();
                     loadData();
@@ -211,12 +239,13 @@ public class AspirationManagementPanel extends JPanel {
                     JOptionPane.showMessageDialog(
                             AspirationManagementPanel.this,
                             ex.getMessage(),
-                            "Loi",
+                            "Lỗi",
                             JOptionPane.ERROR_MESSAGE);
                 }
             }
         };
         worker.execute();
+        loadingDialog.setVisible(true); // This will block until loadingDialog.dispose() is called
     }
 
     private void showReportDialog() {
@@ -231,7 +260,7 @@ public class AspirationManagementPanel extends JPanel {
         JTabbedPane tabbedPane = new JTabbedPane();
 
         // Tab 1: Detailed successful candidates
-        String[] cols1 = {"CCCD", "Họ tên", "Nguyện vọng", "Mã ngành", "Tổ hợp", "Điểm THM", "Điểm cộng", "Điểm UT", "Điểm XT", "Phương thức"};
+        String[] cols1 = {"CCCD", "Họ tên", "Nguyện vọng", "Mã Ngành", "Tổ hợp", "Điểm THM", "Điểm cộng", "Điểm UT", "Điểm XT", "Phương thức"};
         DefaultTableModel model1 = new DefaultTableModel(cols1, 0);
         JTable table1 = new JTable(model1);
         table1.setRowHeight(25);
@@ -247,7 +276,7 @@ public class AspirationManagementPanel extends JPanel {
                     row[1],         // CCCD
                     hoTen.trim(),   // Họ tên
                     row[10],        // Nguyện vọng (thuTu)
-                    row[0],         // Mã ngành
+                    row[0],         // ID Ngành
                     row[4],         // Tổ hợp
                     row[5],         // Điểm THM
                     row[7],         // Điểm cộng
@@ -259,7 +288,7 @@ public class AspirationManagementPanel extends JPanel {
         tabbedPane.addTab("Danh sách trúng tuyển chi tiết", new JScrollPane(table1));
 
         // Tab 2: Count by method and major
-        String[] cols2 = {"Mã ngành", "Phương thức", "Số lượng trúng tuyển"};
+        String[] cols2 = {"Mã Ngành", "Phương thức", "Số lượng trúng tuyển"};
         DefaultTableModel model2 = new DefaultTableModel(cols2, 0);
         JTable table2 = new JTable(model2);
         table2.setRowHeight(25);
@@ -334,47 +363,134 @@ public class AspirationManagementPanel extends JPanel {
             SwingUtilities.getWindowAncestor(this),
             editMode ? "Sửa nguyện vọng" : "Thêm nguyện vọng",
                 Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setSize(560, 470);
+        dialog.setSize(560, 520);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout(10, 10));
 
-        JPanel formPanel = new JPanel(new GridLayout(10, 2, 10, 10));
+        JPanel formPanel = new JPanel(new GridLayout(11, 2, 10, 10));
         formPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
         formPanel.setBackground(AppColor.SURFACE);
 
         JTextField txtCccd = new JTextField(editMode ? current.getCccd() : "");
-        JTextField txtMaNganh = new JTextField(editMode ? current.getMaNganh() : "");
+        JTextField txtHoTen = new JTextField(editMode ? "" : "");
+        txtHoTen.setEditable(false);
+        txtHoTen.setBackground(new Color(245, 245, 245));
+
+        if (editMode && current.getCccd() != null) {
+            com.tuyensinh.entity.Candidate c = candidateService.getByCccd(current.getCccd());
+            if (c != null) {
+                txtHoTen.setText(c.getHoTen());
+            }
+        }
+
+        txtCccd.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private javax.swing.Timer timer = new javax.swing.Timer(300, e -> {
+                String cccd = txtCccd.getText().trim();
+                if (cccd.length() >= 3) {
+                    com.tuyensinh.entity.Candidate c = candidateService.getByCccd(cccd);
+                    if (c != null) {
+                        txtHoTen.setText(c.getHoTen());
+                    } else {
+                        txtHoTen.setText("");
+                    }
+                } else {
+                    txtHoTen.setText("");
+                }
+            });
+
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { restartTimer(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { restartTimer(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { restartTimer(); }
+            
+            private void restartTimer() {
+                timer.setRepeats(false);
+                if (timer.isRunning()) timer.restart();
+                else timer.start();
+            }
+        });
+
         JTextField txtThuTu = new JTextField(editMode ? integerToText(current.getThuTu()) : "");
+
+        JComboBox<com.tuyensinh.entity.XtNganh> cbMaNganh = new JComboBox<>();
+        cbMaNganh.setEditable(true);
+        List<com.tuyensinh.entity.XtNganh> listNganh = nganhService.getAll();
+        for (com.tuyensinh.entity.XtNganh n : listNganh) cbMaNganh.addItem(n);
+
+        JComboBox<String> cbToHop = new JComboBox<>();
+        cbToHop.setEditable(true);
+
+        cbMaNganh.addActionListener(e -> {
+            Object selected = cbMaNganh.getSelectedItem();
+            if (selected == null) return;
+            
+            com.tuyensinh.entity.XtNganh targetNganh = null;
+            if (selected instanceof com.tuyensinh.entity.XtNganh) {
+                targetNganh = (com.tuyensinh.entity.XtNganh) selected;
+            } else {
+                String input = selected.toString().split(" - ")[0].trim();
+                targetNganh = nganhService.searchByMaNganh(input);
+            }
+            
+            cbToHop.removeAllItems();
+            if (targetNganh != null) {
+                List<com.tuyensinh.entity.MajorCombination> combs = majorCombService.getByNganhId(targetNganh.getIdnganh());
+                for (com.tuyensinh.entity.MajorCombination mc : combs) {
+                    cbToHop.addItem(mc.getMaToHop());
+                }
+            }
+        });
+
+        if (editMode && current.getNganhId() != null) {
+            com.tuyensinh.entity.XtNganh n = nganhService.getById(current.getNganhId());
+            if (n != null) {
+                for (int i = 0; i < cbMaNganh.getItemCount(); i++) {
+                    if (cbMaNganh.getItemAt(i).getIdnganh().equals(n.getIdnganh())) {
+                        cbMaNganh.setSelectedIndex(i);
+                        break;
+                    }
+                }
+                if (current.getToHop() != null) {
+                    cbToHop.setSelectedItem(current.getToHop());
+                }
+            }
+        }
+
         JTextField txtDiemThxt = new JTextField(editMode ? decimalToText(current.getDiemThxt()) : "");
-        JTextField txtDiemUt = new JTextField(editMode ? decimalToText(current.getDiemUtxt()) : "");
-        JTextField txtDiemCc = new JTextField(editMode ? decimalToText(current.getDiemCc()) : "");
-        JTextField txtPhuongThuc = new JTextField(editMode ? current.getPhuongThuc() : "");
-        JTextField txtToHop = new JTextField(editMode ? current.getToHop() : "");
+        JTextField txtDiemCong = new JTextField(editMode ? decimalToText(current.getDiemCong()) : "");
+        JTextField txtDiemUt = new JTextField(editMode ? decimalToText(current.getDiemUtqd()) : "");
+        JTextField txtDiemXt = new JTextField(editMode ? decimalToText(current.getDiemXetTuyen()) : "");
         JComboBox<String> cboKetQua = new JComboBox<>(
-            new String[]{"chưa xét", "trúng tuyển", "không trúng tuyển", "dưới sàn", "chưa cấu hình", "yes"});
+            new String[]{"chuaxet", "trungtuyen", "khongtrungtuyen", "duoisan", "chuacauhinh", "yes"});
         cboKetQua.setEditable(true);
-        cboKetQua.setSelectedItem(editMode && current.getKetQua() != null ? current.getKetQua() : "chưa xét");
+        cboKetQua.setSelectedItem(editMode && current.getKetQua() != null ? current.getKetQua() : "chuaxet");
+
+        JComboBox<String> cboPhuongThuc = new JComboBox<>(new String[]{"THPT", "VSAT", "DGNL"});
+        if (editMode && current.getPhuongThuc() != null) {
+            cboPhuongThuc.setSelectedItem(current.getPhuongThuc());
+        }
 
         formPanel.add(new JLabel("CCCD:"));
         formPanel.add(txtCccd);
-        formPanel.add(new JLabel("Mã ngành:"));
-        formPanel.add(txtMaNganh);
-        formPanel.add(new JLabel("Thứ tự NV:"));
+        formPanel.add(new JLabel("Họ tên:"));
+        formPanel.add(txtHoTen);
+        formPanel.add(new JLabel("Nguyện vọng (Thứ tự):"));
         formPanel.add(txtThuTu);
+        formPanel.add(new JLabel("Mã Ngành:"));
+        formPanel.add(cbMaNganh);
+        formPanel.add(new JLabel("Mã Tổ hợp:"));
+        formPanel.add(cbToHop);
         formPanel.add(new JLabel("Điểm THM:"));
         formPanel.add(txtDiemThxt);
-        formPanel.add(new JLabel("Điểm ưu tiên (chưa quy đổi):"));
+        formPanel.add(new JLabel("Điểm cộng:"));
+        formPanel.add(txtDiemCong);
+        formPanel.add(new JLabel("Điểm UT:"));
         formPanel.add(txtDiemUt);
-        formPanel.add(new JLabel("Điểm cộng (không quy đổi):"));
-        formPanel.add(txtDiemCc);
-        formPanel.add(new JLabel("Phương thức:"));
-        formPanel.add(txtPhuongThuc);
-        formPanel.add(new JLabel("Tổ hợp:"));
-        formPanel.add(txtToHop);
+        formPanel.add(new JLabel("Điểm XT:"));
+        formPanel.add(txtDiemXt);
         formPanel.add(new JLabel("Kết quả:"));
         formPanel.add(cboKetQua);
-        formPanel.add(new JLabel(""));
-        formPanel.add(new JLabel("Điểm XT = THM + UT_QuyĐổi + Cộng."));
+        formPanel.add(new JLabel("Phương thức:"));
+        formPanel.add(cboPhuongThuc);
 
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton btnSave = new RoundedButton("Lưu", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
@@ -384,13 +500,44 @@ public class AspirationManagementPanel extends JPanel {
             try {
                 Aspiration aspiration = editMode ? current : new Aspiration();
                 aspiration.setCccd(txtCccd.getText());
-                aspiration.setMaNganh(txtMaNganh.getText());
+
                 aspiration.setThuTu(parseInteger(txtThuTu.getText()));
+                
+                Object selectedNganh = cbMaNganh.getSelectedItem();
+                if (selectedNganh == null) throw new Exception("Vui lòng chọn ngành!");
+                
+                com.tuyensinh.entity.XtNganh n = null;
+                if (selectedNganh instanceof com.tuyensinh.entity.XtNganh) {
+                    n = (com.tuyensinh.entity.XtNganh) selectedNganh;
+                } else {
+                    String maNganhInput = selectedNganh.toString().split(" - ")[0].trim();
+                    n = nganhService.searchByMaNganh(maNganhInput);
+                }
+
+                if (n == null) {
+                    JOptionPane.showMessageDialog(dialog, "Mã ngành không tồn tại trong hệ thống!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                aspiration.setNganhId(n.getIdnganh());
+                
+                Object selectedToHop = cbToHop.getSelectedItem();
+                if (selectedToHop == null) throw new Exception("Vui lòng chọn hoặc nhập tổ hợp!");
+                aspiration.setToHop(selectedToHop.toString().trim().toUpperCase());
+                
                 aspiration.setDiemThxt(parseDecimal(txtDiemThxt.getText()));
-                aspiration.setDiemUtxt(parseDecimal(txtDiemUt.getText()));
-                aspiration.setDiemCc(parseDecimal(txtDiemCc.getText()));
-                aspiration.setPhuongThuc(txtPhuongThuc.getText());
-                aspiration.setToHop(txtToHop.getText());
+
+                BigDecimal diemCong = parseDecimal(txtDiemCong.getText());
+                aspiration.setDiemCong(diemCong);
+                aspiration.setDiemCc(diemCong);
+
+                BigDecimal diemUt = parseDecimal(txtDiemUt.getText());
+                aspiration.setDiemUtqd(diemUt);
+                if (!editMode) {
+                    aspiration.setDiemUtxt(diemUt);
+                }
+
+                aspiration.setDiemXetTuyen(parseDecimal(txtDiemXt.getText()));
+                aspiration.setPhuongThuc(cboPhuongThuc.getSelectedItem().toString());
                 aspiration.setKetQua(cboKetQua.getSelectedItem() == null
                         ? null
                         : cboKetQua.getSelectedItem().toString());

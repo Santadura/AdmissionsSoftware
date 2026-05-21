@@ -31,7 +31,7 @@ public class ToHopMonRepository {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             tx = session.beginTransaction();
-            session.save(tohop);
+            session.persist(tohop);
             tx.commit();
         } catch (Exception e) {
             if (tx != null) tx.rollback();
@@ -43,7 +43,7 @@ public class ToHopMonRepository {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             tx = session.beginTransaction();
-            session.update(tohop);
+            session.merge(tohop);
             tx.commit();
         } catch (Exception e) {
             if (tx != null) tx.rollback();
@@ -56,7 +56,7 @@ public class ToHopMonRepository {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             tx = session.beginTransaction();
             XtToHopMon t = session.get(XtToHopMon.class, id);
-            if (t != null) session.delete(t);
+            if (t != null) session.remove(t);
             tx.commit();
         } catch (Exception e) {
             if (tx != null) tx.rollback();
@@ -77,21 +77,21 @@ public class ToHopMonRepository {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             tx = session.beginTransaction();
+            int count = 0;
             for (XtToHopMon t : list) {
-                if (!existsByMatohopInSession(session, t.getMatohop())) {
-                    session.save(t);
+                XtToHopMon existing = findByMatohopInSession(session, t.getMatohop());
+                if (existing == null) {
+                    session.persist(t);
                 } else {
-                    Query<XtToHopMon> q = session.createQuery(
-                        "FROM XtToHopMon WHERE matohop = :ma", XtToHopMon.class);
-                    q.setParameter("ma", t.getMatohop());
-                    XtToHopMon existing = q.uniqueResult();
-                    if (existing != null) {
-                        existing.setMon1(t.getMon1());
-                        existing.setMon2(t.getMon2());
-                        existing.setMon3(t.getMon3());
-                        existing.setTentohop(t.getTentohop());
-                        session.update(existing);
-                    }
+                    existing.setMon1(t.getMon1());
+                    existing.setMon2(t.getMon2());
+                    existing.setMon3(t.getMon3());
+                    existing.setTentohop(t.getTentohop());
+                    session.merge(existing);
+                }
+                if (++count % 50 == 0) {
+                    session.flush();
+                    session.clear();
                 }
             }
             tx.commit();
@@ -101,10 +101,10 @@ public class ToHopMonRepository {
         }
     }
 
-    private boolean existsByMatohopInSession(Session session, String matohop) {
-        Query<Long> q = session.createQuery(
-            "SELECT COUNT(*) FROM XtToHopMon WHERE matohop = :ma", Long.class);
+    private XtToHopMon findByMatohopInSession(Session session, String matohop) {
+        Query<XtToHopMon> q = session.createQuery(
+            "FROM XtToHopMon WHERE matohop = :ma", XtToHopMon.class);
         q.setParameter("ma", matohop);
-        return q.uniqueResult() > 0;
+        return q.uniqueResult();
     }
 }

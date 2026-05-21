@@ -19,56 +19,80 @@ public class CombinationFormDialog extends JDialog {
         this.tohop = tohop == null ? new XtToHopMon() : tohop;
         initUI();
         if (tohop != null) fillData();
-        setSize(420, 330);
-        setLocationRelativeTo(parent);
-        setResizable(false);
     }
 
     private void initUI() {
-        JPanel main = new JPanel(new BorderLayout(10, 10));
-        main.setBackground(AppColor.SURFACE);
-        main.setBorder(new EmptyBorder(20, 25, 15, 25));
+        setSize(450, 500);
+        setLocationRelativeTo(getOwner());
+        setLayout(new BorderLayout());
 
-        JPanel form = new JPanel(new GridBagLayout());
-        form.setBackground(AppColor.SURFACE);
-        GridBagConstraints gc = new GridBagConstraints();
-        gc.insets = new Insets(6, 5, 6, 5);
-        gc.anchor = GridBagConstraints.WEST;
-        gc.fill = GridBagConstraints.HORIZONTAL;
+        JPanel mainPanel = new JPanel(new GridBagLayout());
+        mainPanel.setBorder(new EmptyBorder(20, 25, 20, 25));
+        mainPanel.setBackground(AppColor.SURFACE);
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.weightx = 1.0;
 
-        Font f = new Font("Segoe UI", Font.PLAIN, 13);
-        String[] labels = {"Mã tổ hợp *:", "Tên tổ hợp:", "Môn 1 *:", "Môn 2 *:", "Môn 3 *:"};
-        txtMatohop = new JTextField(); txtTentohop = new JTextField();
-        txtMon1 = new JTextField(); txtMon2 = new JTextField(); txtMon3 = new JTextField();
-        JTextField[] fields = {txtMatohop, txtTentohop, txtMon1, txtMon2, txtMon3};
+        int row = 0;
+        
+        addLabel(mainPanel, "Mã tổ hợp *:", gbc, row++);
+        txtMatohop = new JTextField();
+        addTextField(mainPanel, txtMatohop, gbc, row++);
 
-        for (int i = 0; i < labels.length; i++) {
-            gc.gridx = 0; gc.gridy = i; gc.weightx = 0.35;
-            JLabel lbl = new JLabel(labels[i]); lbl.setFont(f);
-            form.add(lbl, gc);
-            gc.gridx = 1; gc.weightx = 0.65;
-            fields[i].setFont(f);
-            fields[i].setPreferredSize(new Dimension(200, 30));
-            form.add(fields[i], gc);
-        }
+        addLabel(mainPanel, "Tên tổ hợp:", gbc, row++);
+        txtTentohop = new JTextField();
+        addTextField(mainPanel, txtTentohop, gbc, row++);
 
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        btnPanel.setBackground(AppColor.SURFACE);
+        addLabel(mainPanel, "Môn 1 *:", gbc, row++);
+        txtMon1 = new JTextField();
+        addTextField(mainPanel, txtMon1, gbc, row++);
+
+        addLabel(mainPanel, "Môn 2 *:", gbc, row++);
+        txtMon2 = new JTextField();
+        addTextField(mainPanel, txtMon2, gbc, row++);
+
+        addLabel(mainPanel, "Môn 3 *:", gbc, row++);
+        txtMon3 = new JTextField();
+        addTextField(mainPanel, txtMon3, gbc, row++);
+
+        // Buttons
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        btnPanel.setBackground(AppColor.BACKGROUND);
+        
         RoundedButton btnSave = new RoundedButton("Lưu", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
-        RoundedButton btnCancel = new RoundedButton("Hủy", new Color(150,150,150), new Color(120,120,120));
+        RoundedButton btnCancel = new RoundedButton("Hủy", new Color(158, 158, 158), new Color(117, 117, 117));
+        
         btnSave.addActionListener(e -> save());
         btnCancel.addActionListener(e -> dispose());
+        
         btnPanel.add(btnCancel);
         btnPanel.add(btnSave);
 
-        main.add(form, BorderLayout.CENTER);
-        main.add(btnPanel, BorderLayout.SOUTH);
-        setContentPane(main);
+        add(new JScrollPane(mainPanel), BorderLayout.CENTER);
+        add(btnPanel, BorderLayout.SOUTH);
+    }
+
+    private void addLabel(JPanel panel, String text, GridBagConstraints gbc, int row) {
+        gbc.gridy = row;
+        gbc.weighty = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        panel.add(label, gbc);
+    }
+
+    private void addTextField(JPanel panel, JTextField textField, GridBagConstraints gbc, int row) {
+        gbc.gridy = row;
+        textField.setPreferredSize(new Dimension(0, 35));
+        textField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        panel.add(textField, gbc);
     }
 
     private void fillData() {
         txtMatohop.setText(tohop.getMatohop() != null ? tohop.getMatohop() : "");
-        txtMatohop.setEditable(false);
+        txtMatohop.setEditable(tohop.getMatohop() == null);
         txtTentohop.setText(tohop.getTentohop() != null ? tohop.getTentohop() : "");
         txtMon1.setText(tohop.getMon1() != null ? tohop.getMon1() : "");
         txtMon2.setText(tohop.getMon2() != null ? tohop.getMon2() : "");

@@ -18,11 +18,11 @@ public class BonusScore {
     @Column(name = "iddiemcong")
     private Integer id;
 
-    @Column(name = "ts_cccd")
+    @Column(name = "thisinh_cccd", length = 12)
     private String cccd;
 
-    @Column(name = "manganh")
-    private String maNganh;
+    @Column(name = "nganh_id")
+    private Integer nganhId;
 
     @Column(name = "matohop")
     private String maToHop;
@@ -61,12 +61,12 @@ public class BonusScore {
         this.cccd = cccd;
     }
 
-    public String getMaNganh() {
-        return maNganh;
+    public Integer getNganhId() {
+        return nganhId;
     }
 
-    public void setMaNganh(String maNganh) {
-        this.maNganh = maNganh;
+    public void setNganhId(Integer nganhId) {
+        this.nganhId = nganhId;
     }
 
     public String getMaToHop() {

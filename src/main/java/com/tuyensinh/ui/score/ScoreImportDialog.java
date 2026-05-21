@@ -63,6 +63,7 @@ public class ScoreImportDialog extends JDialog {
         filePanel.add(btnBrowse, BorderLayout.EAST);
 
         cboLoai = new JComboBox<>(new String[]{
+                "Tất cả",
                 "THPT",
                 "VSAT",
                 "DGNL"
@@ -109,13 +110,14 @@ public class ScoreImportDialog extends JDialog {
 
             @Override
             public boolean accept(File f) {
-                return f.getName().endsWith(".xlsx")
+                return f.getName().toLowerCase().endsWith(".xlsx")
+                        || f.getName().toLowerCase().endsWith(".xls")
                         || f.isDirectory();
             }
 
             @Override
             public String getDescription() {
-                return "Excel (*.xlsx)";
+                return "Excel (*.xlsx, *.xls)";
             }
         });
 
@@ -133,38 +135,68 @@ public class ScoreImportDialog extends JDialog {
     private void importFile() {
 
         if (selectedFile == null) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Vui lòng chọn file"
-            );
-
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn file");
             return;
         }
 
-        try {
+        JButton btnImport = (JButton) ((JPanel) getContentPane().getComponent(1)).getComponent(0);
+        btnImport.setEnabled(false);
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-            service.importExcel(
-                    selectedFile,
-                    cboLoai.getSelectedItem().toString()
-            );
+        final String loaiDiem = cboLoai.getSelectedItem().toString();
 
-            imported = true;
+        // Use SwingWorker to run import in background
+        SwingWorker<CandidateScoreService.ImportResult, Void> worker = new SwingWorker<>() {
+            @Override
+            protected CandidateScoreService.ImportResult doInBackground() throws Exception {
+                return service.importExcel(selectedFile, loaiDiem);
+            }
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Import thành công"
-            );
+            @Override
+            protected void done() {
+                setCursor(Cursor.getDefaultCursor());
+                btnImport.setEnabled(true);
+                try {
+                    CandidateScoreService.ImportResult result = get();
+                    imported = true;
 
-            dispose();
+                    StringBuilder msg = new StringBuilder();
+                    msg.append("Import hoàn tất!\n");
+                    msg.append("- Tổng số dòng: ").append(result.total).append("\n");
+                    msg.append("- Thành công: ").append(result.success).append("\n");
+                    
+                    if (!result.errors.isEmpty()) {
+                        msg.append("- Lỗi: ").append(result.errors.size()).append(" dòng.\n");
+                        if (result.errors.size() <= 5) {
+                            for (String err : result.errors) {
+                                msg.append("  + ").append(err).append("\n");
+                            }
+                        } else {
+                            msg.append("  (Chỉ hiển thị 5 lỗi đầu tiên)\n");
+                            for (int i = 0; i < 5; i++) {
+                                msg.append("  + ").append(result.errors.get(i)).append("\n");
+                            }
+                        }
+                    }
 
-        } catch (Exception e) {
+                    JOptionPane.showMessageDialog(
+                            ScoreImportDialog.this,
+                            msg.toString(),
+                            "Thông báo",
+                            result.errors.isEmpty() ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE
+                    );
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Lỗi: " + e.getMessage()
-            );
-        }
+                    dispose();
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(
+                            ScoreImportDialog.this,
+                            "Lỗi: " + e.getMessage()
+                    );
+                }
+            }
+        };
+
+        worker.execute();
     }
 
     public boolean showDialog() {

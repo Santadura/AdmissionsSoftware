@@ -1,348 +1,241 @@
 package com.tuyensinh.ui.bonus;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dialog;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.GridLayout;
-import java.math.BigDecimal;
-import java.util.List;
-
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
-import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
-
 import com.tuyensinh.entity.BonusScore;
 import com.tuyensinh.service.BonusScoreService;
 import com.tuyensinh.ui.AppColor;
 import com.tuyensinh.ui.RoundedButton;
 
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import java.awt.*;
+import java.util.List;
+
 public class BonusManagementPanel extends JPanel {
 
-    private final BonusScoreService service;
-    private JTable tableBonus;
+    private JTable table;
     private DefaultTableModel tableModel;
     private JTextField txtSearch;
+    private BonusScoreService service;
 
-    /**
-     * Khởi tạo panel quản lý điểm cộng.
-     * Thiết lập service, giao diện và tải dữ liệu ban đầu.
-     */
     public BonusManagementPanel() {
         this.service = new BonusScoreService();
         initUI();
         loadData();
     }
 
-    /**
-     * Khởi tạo giao diện người dùng cho panel.
-     * Bao gồm tiêu đề, thanh tìm kiếm, bảng hiển thị dữ liệu và các nút chức năng.
-     */
     private void initUI() {
         setLayout(new BorderLayout(15, 15));
         setBackground(AppColor.BACKGROUND);
         setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // Panel chứa tiêu đề và thanh tìm kiếm
-        JPanel topPanel = new JPanel(new BorderLayout(10, 10));
+        // --- TOP ---
+        JPanel topPanel = new JPanel(new BorderLayout(15, 15));
         topPanel.setOpaque(false);
 
-        JLabel lblTitle = new JLabel("Quản lý điểm cộng");
+        JLabel lblTitle = new JLabel("Quản lý điểm cộng 2025");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 30));
         lblTitle.setForeground(AppColor.TEXT_PRIMARY);
         topPanel.add(lblTitle, BorderLayout.NORTH);
 
-        // Thanh tìm kiếm
-        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
-        searchPanel.setBackground(AppColor.SURFACE);
-        searchPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(AppColor.BORDER, 1),
-                new EmptyBorder(5, 8, 5, 8)));
+        // Search bar
+        JPanel searchBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        searchBar.setBackground(AppColor.SURFACE);
+        searchBar.setBorder(BorderFactory.createLineBorder(AppColor.BORDER));
 
-        txtSearch = new JTextField(24);
-        txtSearch.setPreferredSize(new Dimension(260, 35));
-        JButton btnSearch = new RoundedButton("Tìm kiếm", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
-        JButton btnRefresh = new RoundedButton("Làm mới", new Color(100, 150, 200), new Color(70, 120, 170));
+        txtSearch = new JTextField(20);
+        txtSearch.setPreferredSize(new Dimension(220, 35));
+        txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
-        // Lắng nghe sự kiện tìm kiếm và làm mới
-        btnSearch.addActionListener(e -> loadData());
-        txtSearch.addActionListener(e -> loadData());
-        btnRefresh.addActionListener(e -> {
-            txtSearch.setText("");
-            loadData();
-        });
+        RoundedButton btnSearch = new RoundedButton("Tìm kiếm", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
+        RoundedButton btnRefresh = new RoundedButton("Làm mới", new Color(100, 150, 200), new Color(70, 120, 170));
 
-        searchPanel.add(new JLabel("Tìm kiếm (CCCD, Nguyện vọng, ...):"));
-        searchPanel.add(txtSearch);
-        searchPanel.add(btnSearch);
-        searchPanel.add(btnRefresh);
-        topPanel.add(searchPanel, BorderLayout.SOUTH);
+        searchBar.add(new JLabel("Tìm kiếm (CCCD):"));
+        searchBar.add(txtSearch);
+        searchBar.add(btnSearch);
+        searchBar.add(btnRefresh);
 
+        topPanel.add(searchBar, BorderLayout.CENTER);
         add(topPanel, BorderLayout.NORTH);
 
-        // Cấu hình bảng hiển thị điểm cộng
-        String[] columns = {
-                "ID", "CCCD", "Nguyện vọng", "Tổ hợp", "Phương thức",
-                "Điểm Tiếng Anh", "Điểm HSG", "Tổng điểm", "Ghi chú", "Key"
-        };
-        tableModel = new DefaultTableModel(columns, 0) {
+        // --- TABLE ---
+        String[] cols = {"ID", "CCCD", "Mã ngành", "Mã tổ hợp", "Phương thức", "Điểm CC", "Điểm HSG", "Tổng", "Ghi chú", "Keys"};
+        tableModel = new DefaultTableModel(cols, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+            public boolean isCellEditable(int r, int c) { return false; }
         };
+        table = new JTable(tableModel);
+        table.setRowHeight(30);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        table.setSelectionBackground(new Color(227, 242, 253));
+        table.setGridColor(AppColor.BORDER);
+        table.getColumnModel().getColumn(0).setMaxWidth(50);
 
-        tableBonus = new JTable(tableModel);
-        tableBonus.setRowHeight(30);
-        tableBonus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tableBonus.setSelectionBackground(new Color(227, 242, 253));
-        tableBonus.setGridColor(AppColor.BORDER);
-
-        // Tùy chỉnh tiêu đề bảng
-        JTableHeader header = tableBonus.getTableHeader();
+        JTableHeader header = table.getTableHeader();
         header.setBackground(AppColor.PRIMARY);
         header.setForeground(Color.WHITE);
         header.setFont(new Font("Segoe UI", Font.BOLD, 13));
         header.setPreferredSize(new Dimension(header.getWidth(), 35));
 
-        JScrollPane scrollPane = new JScrollPane(tableBonus);
-        scrollPane.setBorder(BorderFactory.createLineBorder(AppColor.BORDER));
+        JScrollPane scroll = new JScrollPane(table);
+        scroll.setBorder(BorderFactory.createLineBorder(AppColor.BORDER));
 
-        // Panel bao quanh bảng (card style)
         JPanel centerCard = new JPanel(new BorderLayout());
         centerCard.setBackground(AppColor.SURFACE);
         centerCard.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(AppColor.BORDER, 1),
-                new EmptyBorder(10, 10, 10, 10)));
-        centerCard.add(scrollPane, BorderLayout.CENTER);
+            BorderFactory.createLineBorder(AppColor.BORDER),
+            new EmptyBorder(10, 10, 10, 10)));
+        centerCard.add(scroll, BorderLayout.CENTER);
         add(centerCard, BorderLayout.CENTER);
 
-        // Panel chứa các nút hành động (Thêm, Sửa, Xóa)
-        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        actionPanel.setOpaque(false);
+        // --- BOTTOM ---
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
+        bottomPanel.setOpaque(false);
 
-        JButton btnAdd = new RoundedButton("Thêm", new Color(67, 160, 71), new Color(46, 125, 50));
-        JButton btnEdit = new RoundedButton("Sửa", new Color(251, 140, 0), new Color(239, 108, 0));
-        JButton btnDelete = new RoundedButton("Xóa", new Color(211, 47, 47), new Color(183, 28, 28));
+        RoundedButton btnAdd = new RoundedButton("Thêm", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
+        RoundedButton btnImport = new RoundedButton("Import HSG", new Color(67, 160, 71), new Color(46, 125, 50));
+        RoundedButton btnImportCC = new RoundedButton("Import CC", new Color(33, 150, 243), new Color(25, 118, 210));
+        RoundedButton btnEdit = new RoundedButton("Sửa", new Color(251, 140, 0), new Color(239, 108, 0));
+        RoundedButton btnDelete = new RoundedButton("Xóa", new Color(229, 57, 53), new Color(198, 40, 40));
 
-        btnAdd.addActionListener(e -> openFormDialog(null));
-        btnEdit.addActionListener(e -> editSelected());
-        btnDelete.addActionListener(e -> deleteSelected());
+        bottomPanel.add(btnAdd);
+        bottomPanel.add(btnImport);
+        bottomPanel.add(btnImportCC);
+        bottomPanel.add(btnEdit);
+        bottomPanel.add(btnDelete);
+        add(bottomPanel, BorderLayout.SOUTH);
+
+        // --- EVENTS ---
+        btnSearch.addActionListener(e -> loadData());
+        txtSearch.addActionListener(e -> loadData());
+        btnRefresh.addActionListener(e -> { txtSearch.setText(""); loadData(); });
         
-        // Cho phép sửa nhanh bằng cách click đúp chuột vào dòng
-        tableBonus.addMouseListener(new java.awt.event.MouseAdapter() {
+        btnAdd.addActionListener(e -> addScore());
+        btnImport.addActionListener(e -> importHsg());
+        btnImportCC.addActionListener(e -> importEnglish());
+        btnEdit.addActionListener(e -> editScore());
+        btnDelete.addActionListener(e -> deleteScore());
+        
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
-            public void mousePressed(java.awt.event.MouseEvent event) {
-                if (event.getClickCount() == 2) {
-                    editSelected();
-                }
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                if (evt.getClickCount() == 2) editScore();
             }
         });
-
-        actionPanel.add(btnAdd);
-        actionPanel.add(btnEdit);
-        actionPanel.add(btnDelete);
-        add(actionPanel, BorderLayout.SOUTH);
     }
 
-    /**
-     * Tải dữ liệu từ database vào bảng.
-     * Nếu có từ khóa tìm kiếm trong txtSearch, dữ liệu sẽ được lọc theo từ khóa đó.
-     */
     private void loadData() {
         tableModel.setRowCount(0);
-        List<BonusScore> bonusScores = service.getBonusScores(txtSearch == null ? "" : txtSearch.getText());
-        for (BonusScore bonusScore : bonusScores) {
-            tableModel.addRow(new Object[]{
-                    bonusScore.getId(),
-                    bonusScore.getCccd(),
-                    bonusScore.getMaNganh(),
-                    bonusScore.getMaToHop(),
-                    bonusScore.getPhuongThuc(),
-                    bonusScore.getDiemCc(),
-                    bonusScore.getDiemUtxt(),
-                    bonusScore.getDiemTong(),
-                    bonusScore.getGhiChu(),
-                    bonusScore.getDcKeys()
-            });
-        }
-    }
-
-    /**
-     * Xử lý khi nhấn nút Sửa hoặc click đúp vào dòng trên bảng.
-     * Kiểm tra dòng được chọn và mở dialog chỉnh sửa.
-     */
-    private void editSelected() {
-        Integer id = getSelectedId();
-        if (id == null) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng để sửa.");
-            return;
-        }
-
-        BonusScore bonusScore = service.getById(id);
-        if (bonusScore == null) {
-            JOptionPane.showMessageDialog(this, "Không tìm thấy điểm cộng.");
-            return;
-        }
-        openFormDialog(bonusScore);
-    }
-
-    /**
-     * Xử lý khi nhấn nút Xóa.
-     * Hiển thị hộp thoại xác nhận trước khi xóa dữ liệu trong database.
-     */
-    private void deleteSelected() {
-        Integer id = getSelectedId();
-        if (id == null) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng để xóa.");
-            return;
-        }
-
-        int confirm = JOptionPane.showConfirmDialog(
-            this,
-            "Xóa điểm cộng đã chọn?",
-            "Xác nhận",
-                JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION) {
-            return;
-        }
-
-        try {
-            service.deleteBonusScore(id);
-            loadData();
-            JOptionPane.showMessageDialog(this, "Đã xóa điểm cộng.");
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    /**
-     * Lấy ID của dòng đang được chọn trong bảng.
-     * @return ID (Integer) hoặc null nếu không có dòng nào được chọn.
-     */
-    private Integer getSelectedId() {
-        int selectedRow = tableBonus.getSelectedRow();
-        if (selectedRow < 0) {
-            return null;
-        }
-        return (Integer) tableModel.getValueAt(selectedRow, 0);
-    }
-
-    /**
-     * Mở hộp thoại (Dialog) để thêm mới hoặc chỉnh sửa điểm cộng.
-     * @param current Đối tượng BonusScore cần sửa, hoặc null nếu là thêm mới.
-     */
-    private void openFormDialog(BonusScore current) {
-        boolean editMode = current != null;
-        JDialog dialog = new JDialog(
-                SwingUtilities.getWindowAncestor(this),
-            editMode ? "Sửa điểm cộng" : "Thêm điểm cộng",
-                Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setSize(650, 480);
-        dialog.setLocationRelativeTo(this);
-        dialog.setLayout(new BorderLayout(10, 10));
-
-        // Form nhập liệu
-        JPanel formPanel = new JPanel(new GridLayout(9, 2, 10, 10));
-        formPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
-        formPanel.setBackground(AppColor.SURFACE);
-
-        JTextField txtCccd = new JTextField(editMode ? current.getCccd() : "");
-        JTextField txtMaNganh = new JTextField(editMode ? current.getMaNganh() : "");
-        JTextField txtMaToHop = new JTextField(editMode ? current.getMaToHop() : "");
-        JTextField txtPhuongThuc = new JTextField(editMode ? current.getPhuongThuc() : "");
-        JTextField txtDiemCc = new JTextField(editMode ? decimalToText(current.getDiemCc()) : "");
-        JTextField txtDiemUtxt = new JTextField(editMode ? decimalToText(current.getDiemUtxt()) : "");
-        JTextField txtDiemTong = new JTextField(editMode ? decimalToText(current.getDiemTong()) : "");
-        JTextField txtGhiChu = new JTextField(editMode ? current.getGhiChu() : "");
-
-        formPanel.add(new JLabel("CCCD:"));
-        formPanel.add(txtCccd);
-        formPanel.add(new JLabel("Nguyện vọng:"));
-        formPanel.add(txtMaNganh);
-        formPanel.add(new JLabel("Mã tổ hợp:"));
-        formPanel.add(txtMaToHop);
-        formPanel.add(new JLabel("Phương thức:"));
-        formPanel.add(txtPhuongThuc);
-        formPanel.add(new JLabel("Điểm Tiếng Anh:"));
-        formPanel.add(txtDiemCc);
-        formPanel.add(new JLabel("Điểm HSG:"));
-        formPanel.add(txtDiemUtxt);
-        formPanel.add(new JLabel("Tổng điểm:"));
-        formPanel.add(txtDiemTong);
-        formPanel.add(new JLabel("Ghi chú:"));
-        formPanel.add(txtGhiChu);
-        formPanel.add(new JLabel(""));
-        formPanel.add(new JLabel("Bỏ trống điểm tổng để tự động tính (Anh + HSG)."));
-
-        // Panel chứa nút Lưu và Hủy
-        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnSave = new RoundedButton("Lưu", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
-        JButton btnCancel = new RoundedButton("Hủy", Color.GRAY, Color.DARK_GRAY);
-
-        btnSave.addActionListener(e -> {
-            try {
-                BonusScore bonusScore = editMode ? current : new BonusScore();
-                bonusScore.setCccd(txtCccd.getText());
-                bonusScore.setMaNganh(txtMaNganh.getText());
-                bonusScore.setMaToHop(txtMaToHop.getText());
-                bonusScore.setPhuongThuc(txtPhuongThuc.getText());
-                bonusScore.setDiemCc(parseDecimal(txtDiemCc.getText()));
-                bonusScore.setDiemUtxt(parseDecimal(txtDiemUtxt.getText()));
-                bonusScore.setDiemTong(parseDecimal(txtDiemTong.getText()));
-                bonusScore.setGhiChu(txtGhiChu.getText());
-
-                if (editMode) {
-                    service.updateBonusScore(bonusScore);
-                } else {
-                    service.addBonusScore(bonusScore);
-                }
-
-                loadData();
-                dialog.dispose();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialog, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        String searchTerm = txtSearch.getText().trim();
+        
+        SwingWorker<List<Object[]>, Void> worker = new SwingWorker<>() {
+            @Override
+            protected List<Object[]> doInBackground() {
+                return service.getBonusScores(searchTerm);
             }
-        });
-        btnCancel.addActionListener(e -> dialog.dispose());
 
-        actionPanel.add(btnSave);
-        actionPanel.add(btnCancel);
+            @Override
+            protected void done() {
+                try {
+                    List<Object[]> data = get();
+                    for (Object[] row : data) {
+                        BonusScore b = (BonusScore) row[0];
+                        String manganh = (String) row[1];
+                        tableModel.addRow(new Object[]{
+                            b.getId(),
+                            b.getCccd(),
+                            manganh,
+                            b.getMaToHop(),
+                            b.getPhuongThuc(),
+                            b.getDiemCc(),
+                            b.getDiemUtxt(),
+                            b.getDiemTong(),
+                            b.getGhiChu(),
+                            b.getDcKeys()
+                        });
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(BonusManagementPanel.this, "Lỗi tải dữ liệu: " + ex.getMessage());
+                }
+            }
+        };
+        worker.execute();
+    }
 
-        dialog.add(formPanel, BorderLayout.CENTER);
-        dialog.add(actionPanel, BorderLayout.SOUTH);
+    private void addScore() {
+        BonusFormDialog dialog = new BonusFormDialog((JFrame) SwingUtilities.getWindowAncestor(this), null);
         dialog.setVisible(true);
+        if (dialog.isConfirmed()) {
+            try {
+                service.addBonusScore(dialog.getBonusScore());
+                loadData();
+                JOptionPane.showMessageDialog(this, "Thêm thành công!");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage());
+            }
+        }
     }
 
-    /**
-     * Chuyển đổi chuỗi văn bản sang BigDecimal.
-     * @param value Chuỗi cần chuyển đổi.
-     * @return BigDecimal hoặc null nếu chuỗi rỗng.
-     */
-    private BigDecimal parseDecimal(String value) {
-        String cleaned = value == null ? "" : value.trim();
-        return cleaned.isEmpty() ? null : new BigDecimal(cleaned);
+    private void importHsg() {
+        BonusImportDialog dialog = new BonusImportDialog((JFrame) SwingUtilities.getWindowAncestor(this), service);
+        dialog.setVisible(true);
+        if (dialog.isImported()) {
+            loadData();
+        }
     }
 
-    /**
-     * Chuyển đổi BigDecimal sang chuỗi văn bản để hiển thị lên UI.
-     * Loại bỏ các số 0 thừa ở cuối.
-     * @param value Giá trị BigDecimal.
-     * @return Chuỗi văn bản hoặc rỗng nếu giá trị null.
-     */
-    private String decimalToText(BigDecimal value) {
-        return value == null ? "" : value.stripTrailingZeros().toPlainString();
+    private void importEnglish() {
+        EnglishBonusImportDialog dialog = new EnglishBonusImportDialog((JFrame) SwingUtilities.getWindowAncestor(this), service);
+        dialog.setVisible(true);
+        if (dialog.isImported()) {
+            loadData();
+        }
+    }
+
+    private void editScore() {
+        int row = table.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn bản ghi!");
+            return;
+        }
+        
+        Integer id = (Integer) tableModel.getValueAt(row, 0);
+        BonusScore score = service.getById(id);
+        
+        if (score != null) {
+            BonusFormDialog dialog = new BonusFormDialog((JFrame) SwingUtilities.getWindowAncestor(this), score);
+            dialog.setVisible(true);
+            if (dialog.isConfirmed()) {
+                try {
+                    service.updateBonusScore(dialog.getBonusScore());
+                    loadData();
+                    JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage());
+                }
+            }
+        }
+    }
+
+    private void deleteScore() {
+        int row = table.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn bản ghi!");
+            return;
+        }
+        
+        Integer id = (Integer) tableModel.getValueAt(row, 0);
+        int res = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn xóa bản ghi này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+        if (res == JOptionPane.YES_OPTION) {
+            try {
+                service.deleteBonusScore(id);
+                loadData();
+                JOptionPane.showMessageDialog(this, "Xóa thành công!");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage());
+            }
+        }
     }
 }

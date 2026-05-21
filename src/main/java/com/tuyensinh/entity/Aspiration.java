@@ -18,11 +18,11 @@ public class Aspiration {
     @Column(name = "idnv")
     private Integer id;
 
-    @Column(name = "nn_cccd")
+    @Column(name = "thisinh_cccd", length = 12)
     private String cccd;
 
-    @Column(name = "nv_manganh")
-    private String maNganh;
+    @Column(name = "nv_nganh_id")
+    private Integer nganhId;
 
     @Column(name = "nv_tt")
     private Integer thuTu;
@@ -54,11 +54,14 @@ public class Aspiration {
     @Column(name = "tt_phuongthuc")
     private String phuongThuc;
 
+    @Column(name = "tt_thm")
+    private String ttThm;
+
     @Column(name = "nv_matohop")
     private String toHop;
 
-    @Column(name = "ho_ten")
-    private String hoTen;
+    @Column(name = "nv_rank")
+    private Integer nvRank;
 
     public Integer getId() {
         return id;
@@ -76,20 +79,12 @@ public class Aspiration {
         this.cccd = cccd;
     }
 
-    public String getHoTen() {
-        return hoTen;
+    public Integer getNganhId() {
+        return nganhId;
     }
 
-    public void setHoTen(String hoTen) {
-        this.hoTen = hoTen;
-    }
-
-    public String getMaNganh() {
-        return maNganh;
-    }
-
-    public void setMaNganh(String maNganh) {
-        this.maNganh = maNganh;
+    public void setNganhId(Integer nganhId) {
+        this.nganhId = nganhId;
     }
 
     public Integer getThuTu() {
@@ -172,11 +167,27 @@ public class Aspiration {
         this.phuongThuc = phuongThuc;
     }
 
+    public String getTtThm() {
+        return ttThm;
+    }
+
+    public void setTtThm(String ttThm) {
+        this.ttThm = ttThm;
+    }
+
     public String getToHop() {
         return toHop;
     }
 
     public void setToHop(String toHop) {
         this.toHop = toHop;
+    }
+
+    public Integer getNvRank() {
+        return nvRank;
+    }
+
+    public void setNvRank(Integer nvRank) {
+        this.nvRank = nvRank;
     }
 }

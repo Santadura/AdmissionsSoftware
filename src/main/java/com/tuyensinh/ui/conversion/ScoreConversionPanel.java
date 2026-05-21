@@ -219,11 +219,43 @@ public class ScoreConversionPanel extends JPanel {
     private void importExcel() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Chọn file Excel (Bảng quy đổi điểm)");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
+            public boolean accept(java.io.File f) { return f.getName().toLowerCase().endsWith(".xlsx") || f.isDirectory(); }
+            public String getDescription() { return "Excel files (*.xlsx)"; }
+        });
         
         if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             java.io.File file = fileChooser.getSelectedFile();
-            JOptionPane.showMessageDialog(this, "Đã chọn file: " + file.getName() + "\n(Chức năng đọc file Excel cần sử dụng thư viện Apache POI)");
-            loadData();
+            
+            JDialog progressDialog = new JDialog((JFrame) SwingUtilities.getWindowAncestor(this), "Đang import...", true);
+            JProgressBar progressBar = new JProgressBar();
+            progressBar.setIndeterminate(true);
+            progressDialog.add(progressBar);
+            progressDialog.setSize(300, 80);
+            progressDialog.setLocationRelativeTo(this);
+            
+            SwingWorker<Void, Void> worker = new SwingWorker<>() {
+                @Override
+                protected Void doInBackground() throws Exception {
+                    service.importExcel(file);
+                    return null;
+                }
+                
+                @Override
+                protected void done() {
+                    progressDialog.dispose();
+                    try {
+                        get();
+                        JOptionPane.showMessageDialog(ScoreConversionPanel.this, "Import thành công bảng quy đổi!");
+                        loadData();
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(ScoreConversionPanel.this, "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            };
+            
+            worker.execute();
+            progressDialog.setVisible(true);
         }
     }
 }

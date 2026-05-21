@@ -154,6 +154,15 @@ public class UserManagementPanel extends JPanel {
                 new EmptyBorder(10, 10, 10, 10)));
         centerCard.add(scrollPane, BorderLayout.CENTER);
 
+        tableUsers.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                if (evt.getClickCount() == 2) {
+                    openEditDialog();
+                }
+            }
+        });
+
         add(centerCard, BorderLayout.CENTER);
     }
 

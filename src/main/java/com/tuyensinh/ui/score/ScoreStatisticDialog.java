@@ -74,12 +74,12 @@ public class ScoreStatisticDialog extends JDialog {
 
         cboMon = new JComboBox<>(new String[]{
                 "TO",
+                "VA",
                 "LI",
                 "HO",
                 "SI",
                 "SU",
                 "DI",
-                "VA",
                 "N1_THI",
                 "N1_CC",
                 "CNCN",
@@ -88,7 +88,9 @@ public class ScoreStatisticDialog extends JDialog {
                 "KTPL",
                 "NL1",
                 "NK1",
-                "NK2"
+                "NK2",
+                "NK3",
+                "NK4"
         });
 
         JButton btnView = new RoundedButton(
@@ -302,6 +304,12 @@ public class ScoreStatisticDialog extends JDialog {
 
             case "NK2":
                 return "Năng khiếu 2";
+
+            case "NK3":
+                return "Năng khiếu 3";
+
+            case "NK4":
+                return "Năng khiếu 4";
 
             default:
                 return code;

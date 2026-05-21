@@ -18,22 +18,45 @@ public class NganhService {
 
     private final NganhRepository repo = new NganhRepository();
 
+    public XtNganh getById(Integer id) { return repo.findById(id); }
+
     public List<XtNganh> getAll() { return repo.findAll(); }
+
+    public List<Object[]> getAllWithStats() {
+        return repo.findAllWithAspirationCount();
+    }
+
+    public List<Object[]> searchWithStats(String kw) {
+        if (kw == null || kw.isBlank()) return getAllWithStats();
+        return repo.searchWithAspirationCount(kw.trim());
+    }
 
     public List<XtNganh> search(String kw) {
         if (kw == null || kw.isBlank()) return repo.findAll();
         return repo.search(kw.trim());
     }
 
+    public XtNganh searchByMaNganh(String manganh) {
+        return repo.findByManganh(manganh);
+    }
+
     public void add(XtNganh n) {
         if (n.getManganh() == null || n.getManganh().isBlank())
             throw new IllegalArgumentException("Mã ngành không được rỗng!");
-        if (repo.existsByManganh(n.getManganh()))
-            throw new IllegalArgumentException("Mã ngành '" + n.getManganh() + "' đã tồn tại!");
+        if (n.getNamTuyenSinh() == null) {
+            n.setNamTuyenSinh(2025);
+        }
+        if (repo.existsByManganh(n.getManganh(), n.getNamTuyenSinh()))
+            throw new IllegalArgumentException("Mã ngành '" + n.getManganh() + "' năm " + n.getNamTuyenSinh() + " đã tồn tại!");
         repo.save(n);
     }
 
-    public void update(XtNganh n) { repo.update(n); }
+    public void update(XtNganh n) {
+        if (n.getNamTuyenSinh() == null) {
+            n.setNamTuyenSinh(2025);
+        }
+        repo.update(n);
+    }
 
     public void delete(Integer id) { repo.delete(id); }
 
@@ -63,9 +86,26 @@ public class NganhService {
                     XtNganh n = new XtNganh();
                     n.setManganh(ma);
                     n.setTennganh(getStr(row, 2)); // cột C: Tên ngành
-                    String ct = getStr(row, 3);    // cột D: Chỉ tiêu
-                    if (ct != null) n.setNChitieu(
-                        Integer.parseInt(ct.replaceAll("[^0-9]", "")));
+                    n.setNamTuyenSinh(2025);
+                    
+                    String ds = getStr(row, 3);    // cột D: Ngưỡng đầu vào / Điểm sàn
+                    if (ds != null) {
+                        try {
+                            n.setNDiemsan(new java.math.BigDecimal(ds.replace(",", ".").replaceAll("[^0-9.]", "")));
+                        } catch (Exception e) {
+                            // Bỏ qua nếu không parse được điểm
+                        }
+                    }
+
+                    // Xử lý định dạng file 8 cột: tìm chữ "Gốc" ở cột G (index 6) để lấy tổ hợp gốc ở cột F (index 5)
+                    String checkGoc = getStr(row, 6);
+                    if (checkGoc != null && checkGoc.toLowerCase().contains("gốc")) {
+                        String toHopGoc = getStr(row, 5);
+                        if (toHopGoc != null) {
+                            n.setNTohopgoc(toHopGoc.trim().toUpperCase());
+                        }
+                    }
+
                     list.add(n);
                     count++;
                 } catch (Exception e) {

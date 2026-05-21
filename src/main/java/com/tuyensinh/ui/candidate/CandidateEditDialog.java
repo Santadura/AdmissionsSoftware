@@ -1,13 +1,29 @@
 package com.tuyensinh.ui.candidate;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
+
 import com.tuyensinh.entity.Candidate;
 import com.tuyensinh.service.CandidateService;
 import com.tuyensinh.ui.AppColor;
 import com.tuyensinh.ui.RoundedButton;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import java.awt.*;
 
 public class CandidateEditDialog extends JDialog {
     
@@ -15,140 +31,159 @@ public class CandidateEditDialog extends JDialog {
     private CandidateService service;
     private boolean saved = false;
     
-    private JTextField txtCccd;
-    private JTextField txtSobaodanh;
-    private JTextField txtHo;
-    private JTextField txtTen;
-    private JTextField txtNgaySinh;
-    private JComboBox<String> cboGioiTinh;
-    private JTextField txtNoiSinh;
-    private JTextField txtDienThoai;
-    private JTextField txtEmail;
-    private JTextField txtDoiTuong;
-    private JTextField txtKhuVuc;
+    private JTextField txtCccd, txtSobaodanh, txtHo, txtTen, txtNgaySinh, txtNoiSinh, txtDienThoai, txtEmail, txtNamTS;
+    private JComboBox<String> cboGioiTinh, cboDoiTuong, cboKhuVuc;
     
     public CandidateEditDialog(JFrame parent, Candidate candidate, CandidateService service) {
-        super(parent, "Sửa thông tin thí sinh", true);
+        super(parent, candidate.getIdthisinh() == null ? "Thêm thí sinh mới" : "Sửa thông tin thí sinh", true);
         this.candidate = candidate;
         this.service = service;
-        
-        initComponents();
+        initUI();
         loadCandidateData();
-        pack();
-        setLocationRelativeTo(parent);
     }
     
-    private void initComponents() {
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBackground(AppColor.BACKGROUND);
-        mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
-        
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBackground(AppColor.SURFACE);
-        formPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(AppColor.BORDER, 1),
-                new EmptyBorder(20, 20, 20, 20)
-        ));
+    private void initUI() {
+        setSize(500, 650);
+        setLocationRelativeTo(getOwner());
+        setLayout(new BorderLayout());
+
+        JPanel mainPanel = new JPanel(new GridBagLayout());
+        mainPanel.setBorder(new EmptyBorder(20, 25, 20, 25));
+        mainPanel.setBackground(AppColor.SURFACE);
         
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 10, 5, 10);
-        
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.weightx = 1.0;
+
         int row = 0;
         
-        addLabel(formPanel, gbc, row, "CCCD:");
-        txtCccd = createTextField();
-        addField(formPanel, gbc, row, txtCccd);
-        row++;
-        
-        addLabel(formPanel, gbc, row, "Số báo danh:");
-        txtSobaodanh = createTextField();
-        addField(formPanel, gbc, row, txtSobaodanh);
-        row++;
-        
-        addLabel(formPanel, gbc, row, "Họ:");
-        txtHo = createTextField();
-        addField(formPanel, gbc, row, txtHo);
-        row++;
-        
-        addLabel(formPanel, gbc, row, "Tên:");
-        txtTen = createTextField();
-        addField(formPanel, gbc, row, txtTen);
-        row++;
-        
-        addLabel(formPanel, gbc, row, "Ngày sinh:");
-        txtNgaySinh = createTextField();
-        addField(formPanel, gbc, row, txtNgaySinh);
-        row++;
-        
-        addLabel(formPanel, gbc, row, "Giới tính:");
+        addLabel(mainPanel, "CCCD *:", gbc, row++);
+        txtCccd = new JTextField();
+        addTextField(mainPanel, txtCccd, gbc, row++);
+
+        txtCccd.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private javax.swing.Timer timer = new javax.swing.Timer(300, e -> {
+                if (candidate.getIdthisinh() == null) {
+                    String cccd = txtCccd.getText().trim();
+                    if (cccd.length() == 12 || cccd.length() == 9) {
+                        Candidate existing = service.getByCccd(cccd);
+                        if (existing != null) {
+                            SwingUtilities.invokeLater(() -> {
+                                int option = JOptionPane.showConfirmDialog(
+                                    CandidateEditDialog.this,
+                                    "Thí sinh với CCCD này đã tồn tại. Bạn có muốn điền thông tin hiện có?",
+                                    "Thông báo",
+                                    JOptionPane.YES_NO_OPTION);
+                                if (option == JOptionPane.YES_OPTION) {
+                                    candidate = existing;
+                                    loadCandidateData();
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { restartTimer(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { restartTimer(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { restartTimer(); }
+            
+            private void restartTimer() {
+                timer.setRepeats(false);
+                if (timer.isRunning()) timer.restart();
+                else timer.start();
+            }
+        });
+
+        addLabel(mainPanel, "Số báo danh:", gbc, row++);
+        txtSobaodanh = new JTextField();
+        addTextField(mainPanel, txtSobaodanh, gbc, row++);
+
+        addLabel(mainPanel, "Họ:", gbc, row++);
+        txtHo = new JTextField();
+        addTextField(mainPanel, txtHo, gbc, row++);
+
+        addLabel(mainPanel, "Tên:", gbc, row++);
+        txtTen = new JTextField();
+        addTextField(mainPanel, txtTen, gbc, row++);
+
+        addLabel(mainPanel, "Ngày sinh:", gbc, row++);
+        txtNgaySinh = new JTextField();
+        addTextField(mainPanel, txtNgaySinh, gbc, row++);
+
+        addLabel(mainPanel, "Giới tính:", gbc, row++);
         cboGioiTinh = new JComboBox<>(new String[]{"", "Nam", "Nữ", "Khác"});
+        cboGioiTinh.setPreferredSize(new Dimension(0, 35));
         cboGioiTinh.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        addField(formPanel, gbc, row, cboGioiTinh);
-        row++;
-        
-        addLabel(formPanel, gbc, row, "Nơi sinh:");
-        txtNoiSinh = createTextField();
-        addField(formPanel, gbc, row, txtNoiSinh);
-        row++;
-        
-        addLabel(formPanel, gbc, row, "Điện thoại:");
-        txtDienThoai = createTextField();
-        addField(formPanel, gbc, row, txtDienThoai);
-        row++;
-        
-        addLabel(formPanel, gbc, row, "Email:");
-        txtEmail = createTextField();
-        addField(formPanel, gbc, row, txtEmail);
-        row++;
-        
-        addLabel(formPanel, gbc, row, "ĐT ưu tiên:");
-        txtDoiTuong = createTextField();
-        addField(formPanel, gbc, row, txtDoiTuong);
-        row++;
-        
-        addLabel(formPanel, gbc, row, "KV ưu tiên:");
-        txtKhuVuc = createTextField();
-        addField(formPanel, gbc, row, txtKhuVuc);
-        
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        buttonPanel.setOpaque(false);
+        gbc.gridy = row++;
+        mainPanel.add(cboGioiTinh, gbc);
+
+        addLabel(mainPanel, "Nơi sinh:", gbc, row++);
+        txtNoiSinh = new JTextField();
+        addTextField(mainPanel, txtNoiSinh, gbc, row++);
+
+        addLabel(mainPanel, "Điện thoại:", gbc, row++);
+        txtDienThoai = new JTextField();
+        addTextField(mainPanel, txtDienThoai, gbc, row++);
+
+        addLabel(mainPanel, "Email:", gbc, row++);
+        txtEmail = new JTextField();
+        addTextField(mainPanel, txtEmail, gbc, row++);
+
+        addLabel(mainPanel, "ĐT ưu tiên:", gbc, row++);
+        cboDoiTuong = new JComboBox<>(new String[]{"", "01", "02", "03", "04", "05", "06", "07"});
+        cboDoiTuong.setEditable(true);
+        cboDoiTuong.setPreferredSize(new Dimension(0, 35));
+        cboDoiTuong.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        gbc.gridy = row++;
+        mainPanel.add(cboDoiTuong, gbc);
+
+        addLabel(mainPanel, "KV ưu tiên:", gbc, row++);
+        cboKhuVuc = new JComboBox<>(new String[]{"", "1", "2NT", "2", "3"});
+        cboKhuVuc.setEditable(true);
+        cboKhuVuc.setPreferredSize(new Dimension(0, 35));
+        cboKhuVuc.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        gbc.gridy = row++;
+        mainPanel.add(cboKhuVuc, gbc);
+
+        addLabel(mainPanel, "Năm tuyển sinh:", gbc, row++);
+        txtNamTS = new JTextField("2025");
+        txtNamTS.setEditable(false);
+        txtNamTS.setBackground(new Color(245, 245, 245));
+        addTextField(mainPanel, txtNamTS, gbc, row++);
+
+        // Buttons
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        btnPanel.setBackground(AppColor.BACKGROUND);
         
         RoundedButton btnSave = new RoundedButton("Lưu", new Color(67, 160, 71), new Color(46, 125, 50));
-        RoundedButton btnCancel = new RoundedButton("Hủy", new Color(150, 150, 150), new Color(100, 100, 100));
+        RoundedButton btnCancel = new RoundedButton("Hủy", new Color(158, 158, 158), new Color(117, 117, 117));
         
         btnSave.addActionListener(e -> save());
         btnCancel.addActionListener(e -> dispose());
         
-        buttonPanel.add(btnSave);
-        buttonPanel.add(btnCancel);
-        
-        mainPanel.add(formPanel, BorderLayout.CENTER);
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-        
-        setContentPane(mainPanel);
+        btnPanel.add(btnCancel);
+        btnPanel.add(btnSave);
+
+        add(new JScrollPane(mainPanel), BorderLayout.CENTER);
+        add(btnPanel, BorderLayout.SOUTH);
     }
     
-    private void addLabel(JPanel panel, GridBagConstraints gbc, int row, String text) {
-        gbc.gridx = 0;
+    private void addLabel(JPanel panel, String text, GridBagConstraints gbc, int row) {
         gbc.gridy = row;
-        gbc.weightx = 0.3;
-        JLabel lbl = new JLabel(text);
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        panel.add(lbl, gbc);
+        gbc.weighty = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        panel.add(label, gbc);
     }
-    
-    private void addField(JPanel panel, GridBagConstraints gbc, int row, JComponent field) {
-        gbc.gridx = 1;
-        gbc.weightx = 0.7;
-        panel.add(field, gbc);
-    }
-    
-    private JTextField createTextField() {
-        JTextField field = new JTextField(20);
-        field.setPreferredSize(new Dimension(200, 30));
-        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        return field;
+
+    private void addTextField(JPanel panel, JTextField textField, GridBagConstraints gbc, int row) {
+        gbc.gridy = row;
+        textField.setPreferredSize(new Dimension(0, 35));
+        textField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        panel.add(textField, gbc);
     }
     
     private void loadCandidateData() {
@@ -156,17 +191,25 @@ public class CandidateEditDialog extends JDialog {
         txtSobaodanh.setText(candidate.getSobaodanh() != null ? candidate.getSobaodanh() : "");
         txtHo.setText(candidate.getHo() != null ? candidate.getHo() : "");
         txtTen.setText(candidate.getTen() != null ? candidate.getTen() : "");
-        txtNgaySinh.setText(candidate.getNgaySinh() != null ? candidate.getNgaySinh() : "");
-        
-        if (candidate.getGioiTinh() != null) {
-            cboGioiTinh.setSelectedItem(candidate.getGioiTinh());
-        }
-        
+        txtNgaySinh.setText(candidate.getNgaySinh() != null ? candidate.getNgaySinh().toString() : "");
+        if (candidate.getGioiTinh() != null) cboGioiTinh.setSelectedItem(candidate.getGioiTinh());
         txtNoiSinh.setText(candidate.getNoiSinh() != null ? candidate.getNoiSinh() : "");
         txtDienThoai.setText(candidate.getDienThoai() != null ? candidate.getDienThoai() : "");
         txtEmail.setText(candidate.getEmail() != null ? candidate.getEmail() : "");
-        txtDoiTuong.setText(candidate.getDoiTuong() != null ? candidate.getDoiTuong() : "");
-        txtKhuVuc.setText(candidate.getKhuVuc() != null ? candidate.getKhuVuc() : "");
+        
+        if (candidate.getDoiTuong() != null) {
+            cboDoiTuong.setSelectedItem(candidate.getDoiTuong());
+        } else {
+            cboDoiTuong.setSelectedIndex(0);
+        }
+        
+        if (candidate.getKhuVuc() != null) {
+            cboKhuVuc.setSelectedItem(candidate.getKhuVuc());
+        } else {
+            cboKhuVuc.setSelectedIndex(0);
+        }
+        
+        txtNamTS.setText(candidate.getNamTuyenSinh() != null ? candidate.getNamTuyenSinh().toString() : "");
     }
     
     private void save() {
@@ -174,28 +217,57 @@ public class CandidateEditDialog extends JDialog {
             JOptionPane.showMessageDialog(this, "CCCD không được để trống!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        
         if (txtHo.getText().trim().isEmpty() && txtTen.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Họ và Tên không được để trống!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        
         candidate.setCccd(txtCccd.getText().trim());
         candidate.setSobaodanh(txtSobaodanh.getText().trim());
         candidate.setHo(txtHo.getText().trim());
         candidate.setTen(txtTen.getText().trim());
-        candidate.setNgaySinh(txtNgaySinh.getText().trim());
+        String dateStr = txtNgaySinh.getText().trim();
+        if (!dateStr.isEmpty()) {
+            try {
+                candidate.setNgaySinh(java.time.LocalDate.parse(dateStr));
+            } catch (Exception ex) {
+                try {
+                    java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                    candidate.setNgaySinh(java.time.LocalDate.parse(dateStr, formatter));
+                } catch(Exception ex2) {
+                    JOptionPane.showMessageDialog(this, "Ngày sinh không đúng định dạng (yyyy-MM-dd hoặc dd/MM/yyyy)", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            }
+        } else {
+            candidate.setNgaySinh(null);
+        }
         candidate.setGioiTinh((String) cboGioiTinh.getSelectedItem());
         candidate.setNoiSinh(txtNoiSinh.getText().trim());
         candidate.setDienThoai(txtDienThoai.getText().trim());
         candidate.setEmail(txtEmail.getText().trim());
-        candidate.setDoiTuong(txtDoiTuong.getText().trim());
-        candidate.setKhuVuc(txtKhuVuc.getText().trim());
+        
+        Object selectedDt = cboDoiTuong.getSelectedItem();
+        candidate.setDoiTuong(selectedDt != null ? selectedDt.toString().trim() : "");
+        
+        Object selectedKv = cboKhuVuc.getSelectedItem();
+        candidate.setKhuVuc(selectedKv != null ? selectedKv.toString().trim() : "");
         
         try {
-            service.updateCandidate(candidate);
+            String nam = txtNamTS.getText().trim();
+            candidate.setNamTuyenSinh(nam.isEmpty() ? 2025 : Integer.parseInt(nam));
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Năm tuyển sinh phải là số nguyên!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        try {
+            if (candidate.getIdthisinh() == null) {
+                service.saveCandidate(candidate);
+                JOptionPane.showMessageDialog(this, "Thêm thí sinh thành công!");
+            } else {
+                service.updateCandidate(candidate);
+                JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
+            }
             saved = true;
-            JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
             dispose();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);

@@ -104,10 +104,11 @@ public class CandidateImportDialog extends JDialog {
         fileChooser.setDialogTitle("Chọn file Excel danh sách thí sinh");
         fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
             public boolean accept(File f) {
-                return f.getName().toLowerCase().endsWith(".xlsx") || f.isDirectory();
+                String name = f.getName().toLowerCase();
+                return name.endsWith(".xlsx") || name.endsWith(".xls") || f.isDirectory();
             }
             public String getDescription() {
-                return "Excel files (*.xlsx)";
+                return "Excel files (*.xlsx, *.xls)";
             }
         });
         

@@ -39,6 +39,25 @@ public class ScoreConversionRepository {
         }
     }
 
+    public void saveAll(List<ScoreConversion> list) {
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+            int count = 0;
+            for (ScoreConversion sc : list) {
+                session.merge(sc);
+                if (++count % 50 == 0) {
+                    session.flush();
+                    session.clear();
+                }
+            }
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
+            throw new RuntimeException("Lỗi import bảng quy đổi: " + e.getMessage());
+        }
+    }
+
     public void delete(int id) {
         Transaction transaction = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {

@@ -1,10 +1,16 @@
 package com.tuyensinh.entity;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
 @Entity
-@Table(name = "xt_thisinhxettuyen25")
+@Table(name = "xt_thisinh")
 public class Candidate {
     
     @Id
@@ -12,7 +18,7 @@ public class Candidate {
     @Column(name = "idthisinh")
     private Integer idthisinh;
     
-    @Column(name = "cccd", length = 20)
+    @Column(name = "cccd", length = 12, nullable = false, unique = true)
     private String cccd;
     
     @Column(name = "sobaodanh", length = 45)
@@ -24,14 +30,11 @@ public class Candidate {
     @Column(name = "ten", length = 100)
     private String ten;
     
-    @Column(name = "ngay_sinh", length = 45)
-    private String ngaySinh;
+    @Column(name = "ngay_sinh")
+    private LocalDate ngaySinh;
     
     @Column(name = "dien_thoai", length = 20)
     private String dienThoai;
-    
-    @Column(name = "password", length = 100)
-    private String password;
     
     @Column(name = "gioi_tinh", length = 10)
     private String gioiTinh;
@@ -39,17 +42,20 @@ public class Candidate {
     @Column(name = "email", length = 100)
     private String email;
     
-    @Column(name = "noi_sinh", length = 45)
+    @Column(name = "noi_sinh", length = 50)
     private String noiSinh;
-    
-    @Column(name = "updated_at")
-    private LocalDate updatedAt;
     
     @Column(name = "doi_tuong", length = 45)
     private String doiTuong;
     
     @Column(name = "khu_vuc", length = 45)
     private String khuVuc;
+    
+    @Column(name = "nam_tuyen_sinh")
+    private Integer namTuyenSinh;
+
+    @Column(name = "updated_at")
+    private LocalDate updatedAt;
     
     public Candidate() {}
     
@@ -68,14 +74,11 @@ public class Candidate {
     public String getTen() { return ten; }
     public void setTen(String ten) { this.ten = ten; }
     
-    public String getNgaySinh() { return ngaySinh; }
-    public void setNgaySinh(String ngaySinh) { this.ngaySinh = ngaySinh; }
+    public LocalDate getNgaySinh() { return ngaySinh; }
+    public void setNgaySinh(LocalDate ngaySinh) { this.ngaySinh = ngaySinh; }
     
     public String getDienThoai() { return dienThoai; }
     public void setDienThoai(String dienThoai) { this.dienThoai = dienThoai; }
-    
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
     
     public String getGioiTinh() { return gioiTinh; }
     public void setGioiTinh(String gioiTinh) { this.gioiTinh = gioiTinh; }
@@ -94,6 +97,9 @@ public class Candidate {
     
     public String getKhuVuc() { return khuVuc; }
     public void setKhuVuc(String khuVuc) { this.khuVuc = khuVuc; }
+
+    public Integer getNamTuyenSinh() { return namTuyenSinh; }
+    public void setNamTuyenSinh(Integer namTuyenSinh) { this.namTuyenSinh = namTuyenSinh; }
     
     public String getHoTen() {
         String h = (ho != null ? ho.trim() : "");

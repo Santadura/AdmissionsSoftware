@@ -3,6 +3,7 @@ package com.tuyensinh.service;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,13 +49,28 @@ public class ToHopMonService {
     }
 
     public ImportResult importFromExcel(File file) throws Exception {
+        // Map quy đổi mã môn sang tên đầy đủ
+        Map<String, String> monMap = new HashMap<>();
+        monMap.put("TO", "Toán"); monMap.put("TOAN", "Toán"); monMap.put("T", "Toán");
+        monMap.put("VA", "Văn"); monMap.put("VAN", "Văn"); monMap.put("V", "Văn");
+        monMap.put("LI", "Lý"); monMap.put("LY", "Lý"); monMap.put("L", "Lý");
+        monMap.put("HO", "Hóa"); monMap.put("HOA", "Hóa"); monMap.put("H", "Hóa");
+        monMap.put("SI", "Sinh"); monMap.put("SINH", "Sinh"); monMap.put("S", "Sinh");
+        monMap.put("SU", "Sử");
+        monMap.put("DI", "Địa");
+        monMap.put("AN", "Anh"); monMap.put("ANH", "Anh"); monMap.put("A", "Anh");
+        monMap.put("GDCD", "GDCD"); monMap.put("KTPL", "KTPL");
+        monMap.put("TI", "T.Anh");
+        monMap.put("NL1", "N.Lực 1");
+        monMap.put("NK1", "N.Khiếu 1"); monMap.put("NK2", "N.Khiếu 2");
+        monMap.put("NK3", "N.Khiếu 3"); monMap.put("NK4", "N.Khiếu 4");
+        monMap.put("CNCN", "CN Công nghiệp"); monMap.put("CNNN", "CN Nông nghiệp");
+
         // Dùng Map để gom unique theo matohop (tránh trùng lặp)
         Map<String, XtToHopMon> map = new LinkedHashMap<>();
         List<String> errors = new ArrayList<>();
 
         // Pattern parse: "B03(TO-3,VA-3,SI-1)" -> matohop=B03, mon1=TO, mon2=VA, mon3=SI
-        // Cột F (index 5) là TEN_TO_HOP = matohop thực sự (VD: "B03")
-        // Cột D (index 3) là MA_TO_HOP đầy đủ để parse ra mon1,mon2,mon3
         Pattern monPattern = Pattern.compile("([A-Z0-9]+)-[\\d.]+");
 
         try (FileInputStream fis = new FileInputStream(file);
@@ -71,25 +87,31 @@ public class ToHopMonService {
                 String maFull  = getStr(row, 3); // cột D: MA_TO_HOP đầy đủ (B03(TO-3,VA-3,SI-1))
 
                 if (maTohop == null || maFull == null) continue;
-                if (map.containsKey(maTohop)) continue; // đã có rồi, bỏ qua
+                if (map.containsKey(maTohop)) continue; 
 
                 try {
-                    // Parse các môn từ chuỗi trong ngoặc: "B03(TO-3,VA-3,SI-1)"
                     List<String> monList = new ArrayList<>();
                     int start = maFull.indexOf('(');
                     int end   = maFull.lastIndexOf(')');
                     if (start != -1 && end != -1) {
                         String inside = maFull.substring(start + 1, end);
                         Matcher m = monPattern.matcher(inside);
-                        while (m.find()) monList.add(m.group(1));
+                        while (m.find()) {
+                            String mCode = m.group(1).toUpperCase();
+                            monList.add(monMap.getOrDefault(mCode, mCode));
+                        }
                     }
 
                     XtToHopMon t = new XtToHopMon();
                     t.setMatohop(maTohop);
-                    t.setMon1(monList.size() > 0 ? monList.get(0) : null);
-                    t.setMon2(monList.size() > 1 ? monList.get(1) : null);
-                    t.setMon3(monList.size() > 2 ? monList.get(2) : null);
-                    t.setTentohop(maTohop); // dùng mã làm tên (VD: "B03")
+                    t.setMon1(monList.size() > 0 ? monList.get(0) : "");
+                    t.setMon2(monList.size() > 1 ? monList.get(1) : "");
+                    t.setMon3(monList.size() > 2 ? monList.get(2) : "");
+                    
+                    // Xây dựng tên tổ hợp: "Toán-Văn-Sinh"
+                    String tenTohop = String.join("-", monList);
+                    t.setTentohop(tenTohop.isEmpty() ? maTohop : tenTohop);
+                    
                     map.put(maTohop, t);
                 } catch (Exception e) {
                     errors.add("Dòng " + rowNum + ": " + e.getMessage());
