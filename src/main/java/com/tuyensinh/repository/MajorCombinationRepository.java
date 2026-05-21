@@ -51,4 +51,18 @@ public class MajorCombinationRepository {
             e.printStackTrace();
         }
     }
+
+    public void importBatch(List<MajorCombination> list) {
+        org.hibernate.Transaction tx = null;
+        try (org.hibernate.Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            for (MajorCombination mc : list) {
+                session.merge(mc);
+            }
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            throw new RuntimeException("Lỗi import batch Tổ hợp: " + e.getMessage());
+        }
+    }
 }
