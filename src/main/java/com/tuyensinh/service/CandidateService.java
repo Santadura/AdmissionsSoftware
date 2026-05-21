@@ -138,8 +138,27 @@ public class CandidateService {
                     candidate.setDoiTuong(getCellStringValue(row, findColumn(headerMap, "DOI_TUONG", "DOITUONG", "ĐỐI TƯỢNG", "OBJECT", "ĐTƯV", "ĐTƯT", "ĐT", "ĐỐI TƯỢNG ƯU TIÊN")));
                     candidate.setKhuVuc(getCellStringValue(row, findColumn(headerMap, "KHU_VUC", "KHUVUC", "KHU VỰC", "AREA", "REGION", "KVƯT", "KV", "KHU VỰC ƯU TIÊN")));
                     candidate.setNoiSinh(getCellStringValue(row, findColumn(headerMap, "NOI_SINH", "NOISINH", "NƠI SINH", "POB")));
-                    candidate.setDienThoai(getCellStringValue(row, findColumn(headerMap, "DIEN_THOAI", "DIENTHOAI", "ĐIỆN THOẠI", "PHONE", "TEL")));
-                    candidate.setEmail(getCellStringValue(row, findColumn(headerMap, "EMAIL", "THU_DIEN_TU")));
+                    
+                    String phone = getCellStringValue(row, findColumn(headerMap, "DIEN_THOAI", "DIENTHOAI", "ĐIỆN THOẠI", "PHONE", "TEL"));
+                    if (phone == null || phone.trim().isEmpty()) {
+                        // Auto-generate phone: 0 + last 9 digits of CCCD (or hash if shorter)
+                        String cleanCccd = cccd.replaceAll("[^0-9]", "");
+                        if (cleanCccd.length() >= 9) {
+                            phone = "0" + cleanCccd.substring(cleanCccd.length() - 9);
+                        } else {
+                            phone = "0" + String.format("%09d", Math.abs((long)cccd.hashCode() % 1000000000L));
+                        }
+                    }
+                    candidate.setDienThoai(phone);
+
+                    String email = getCellStringValue(row, findColumn(headerMap, "EMAIL", "THU_DIEN_TU"));
+                    if (email == null || email.trim().isEmpty()) {
+                        // Auto-generate email: [name_unsigned].[cccd]@gmail.com
+                        String normalizedTen = removeAccents(candidate.getTen() != null ? candidate.getTen() : "");
+                        if (normalizedTen.isEmpty()) normalizedTen = "ts";
+                        email = normalizedTen.toLowerCase() + "." + cccd.toLowerCase() + "@gmail.com";
+                    }
+                    candidate.setEmail(email);
                     
                     candidate.setNamTuyenSinh(2025);
                     candidate.setUpdatedAt(java.time.LocalDate.now());
@@ -237,6 +256,16 @@ public class CandidateService {
         return repository.getStatisticsByRegion();
     }
     
+    private String removeAccents(String s) {
+        if (s == null) return "";
+        String n = s.trim().toLowerCase();
+        n = java.text.Normalizer.normalize(n, java.text.Normalizer.Form.NFD);
+        n = n.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        n = n.replace("đ", "d");
+        n = n.replaceAll("[^a-z0-9]", "");
+        return n;
+    }
+
     private String getCellStringValue(Row row, int colIndex) {
         if (row == null || colIndex < 0) return null;
         Cell cell = row.getCell(colIndex);
