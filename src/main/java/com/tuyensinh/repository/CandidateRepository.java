@@ -5,7 +5,10 @@ import com.tuyensinh.entity.Candidate;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
+
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class CandidateRepository {
     
@@ -86,7 +89,27 @@ public class CandidateRepository {
             return query.uniqueResult();
         }
     }
-    
+
+    public boolean existsByCccdOrSbd(String cccd, String sobaodanh) {
+
+        try (Session session = HibernateUtil
+                .getSessionFactory()
+                .openSession()) {
+
+            String hql =
+                    "SELECT COUNT(*) FROM Candidate " +
+                            "WHERE cccd = :cccd " +
+                            "OR sobaodanh = :sbd";
+
+            Query<Long> query = session.createQuery(hql, Long.class);
+
+            query.setParameter("cccd", cccd);
+            query.setParameter("sbd", sobaodanh);
+
+            return query.uniqueResult() > 0;
+        }
+    }
+
     public void update(Candidate candidate) {
         Transaction transaction = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
@@ -118,4 +141,47 @@ public class CandidateRepository {
         query.setParameter("cccd", cccd);
         return query.uniqueResult();
     }
+    // Đếm theo đối tượng
+public Map<String, Long> countByDoiTuong() {
+    try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        String sql = "SELECT doi_tuong, COUNT(*) FROM xt_thisinhxettuyen25 GROUP BY doi_tuong";
+        Query<Object[]> query = session.createNativeQuery(sql);
+        List<Object[]> results = query.getResultList();
+        Map<String, Long> map = new LinkedHashMap<>();
+        for (Object[] row : results) {
+            String key = (String) row[0];
+            Long value = ((Number) row[1]).longValue();
+            if (key != null && !key.isEmpty()) {
+                map.put(key, value);
+            }
+        }
+        return map;
+    }
+}
+
+    public Map<String, Long> countByKhuVuc() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String sql = "SELECT khu_vuc, COUNT(*) FROM xt_thisinhxettuyen25 GROUP BY khu_vuc";
+            Query<Object[]> query = session.createNativeQuery(sql);
+            List<Object[]> results = query.getResultList();
+            Map<String, Long> map = new LinkedHashMap<>();
+            for (Object[] row : results) {
+                String key = (String) row[0];
+                Long value = ((Number) row[1]).longValue();
+                if (key != null && !key.isEmpty()) {
+                    map.put(key, value);
+                }
+            }
+            return map;
+        }
+    }
+
+    // Đếm tổng số thí sinh (nhanh)
+    public long countFast() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Query<Long> query = session.createQuery("SELECT COUNT(*) FROM Candidate", Long.class);
+            return query.uniqueResult();
+        }
+    }
+    
 }

@@ -4,13 +4,14 @@ import com.tuyensinh.entity.Candidate;
 import com.tuyensinh.service.CandidateService;
 import com.tuyensinh.ui.AppColor;
 import com.tuyensinh.ui.RoundedButton;
-
+import com.tuyensinh.service.CandidateExportService;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 public class CandidateManagementPanel extends JPanel {
@@ -21,7 +22,7 @@ public class CandidateManagementPanel extends JPanel {
     private JButton btnSearch, btnImport, btnEdit, btnRefresh;
     private JButton btnPrev, btnNext;
     private JLabel lblPageInfo;
-    
+    private JButton btnDetail, btnStatistic, btnExport;
     private CandidateService service;
     private int currentPage = 0;
     private String currentSearchTerm = "";
@@ -55,12 +56,12 @@ public class CandidateManagementPanel extends JPanel {
         
         btnSearch = new RoundedButton("Tìm kiếm", AppColor.PRIMARY, AppColor.PRIMARY_DARK);
         btnRefresh = new RoundedButton("Làm mới", new Color(100, 150, 200), new Color(70, 120, 170));
-        
+        btnStatistic = new RoundedButton("Thống kê", new Color(156, 39, 176), new Color(123, 31, 162)); 
         searchBar.add(new JLabel("Tìm kiếm (CCCD/Họ tên):"));
         searchBar.add(txtSearch);
         searchBar.add(btnSearch);
         searchBar.add(btnRefresh);
-        
+        searchBar.add(btnStatistic);
         topPanel.add(searchBar, BorderLayout.SOUTH);
         
         String[] columns = {"ID", "CCCD", "SBD", "Họ tên", "Ngày sinh", "Giới tính", "ĐTƯT", "KVƯT", "Nơi sinh"};
@@ -108,12 +109,16 @@ public class CandidateManagementPanel extends JPanel {
         
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         actionPanel.setOpaque(false);
-        
+
+        btnExport = new RoundedButton("Xuất Excel", new Color(0, 150, 136), new Color(0, 121, 107));
         btnImport = new RoundedButton("Import Excel", new Color(67, 160, 71), new Color(46, 125, 50));
         btnEdit = new RoundedButton("Sửa thông tin", new Color(251, 140, 0), new Color(239, 108, 0));
-        
+        btnDetail = new RoundedButton("Xem chi tiết", new Color(33, 150, 243), new Color(25, 118, 210));
+
+        actionPanel.add(btnExport);
         actionPanel.add(btnImport);
         actionPanel.add(btnEdit);
+        actionPanel.add(btnDetail);
         
         bottomPanel.add(pagePanel, BorderLayout.WEST);
         bottomPanel.add(actionPanel, BorderLayout.EAST);
@@ -158,7 +163,9 @@ public class CandidateManagementPanel extends JPanel {
         
         btnImport.addActionListener(e -> importFromExcel());
         btnEdit.addActionListener(e -> editCandidate());
-        
+        btnDetail.addActionListener(e -> viewDetail());
+        btnStatistic.addActionListener(e -> showStatistic());
+        btnExport.addActionListener(e -> exportExcel());
         tableCandidates.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mousePressed(java.awt.event.MouseEvent evt) {
                 if (evt.getClickCount() == 2) editCandidate();
@@ -272,4 +279,62 @@ public class CandidateManagementPanel extends JPanel {
             service.getTotalPages() : 
             service.getTotalSearchPages(currentSearchTerm);
     }
+    private void viewDetail() {
+    int selectedRow = tableCandidates.getSelectedRow();
+    if (selectedRow == -1) {
+        JOptionPane.showMessageDialog(this, "Vui lòng chọn một thí sinh");
+        return;
+    }
+    Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+    Candidate candidate = service.getCandidateById(id);
+    if (candidate != null) {
+        new CandidateDetailDialog((JFrame) SwingUtilities.getWindowAncestor(this), candidate).setVisible(true);
+    }
+}
+
+private void showStatistic() {
+    new CandidateStatisticDialog((JFrame) SwingUtilities.getWindowAncestor(this)).setVisible(true);
+}
+
+private void exportExcel() {
+
+    List<Candidate> allCandidates;
+    if (currentSearchTerm.isEmpty()) {
+
+        allCandidates = new ArrayList<>();
+        long totalPages = service.getTotalPages();
+        for (int i = 0; i < totalPages; i++) {
+            allCandidates.addAll(service.getCandidates(i));
+        }
+    } else {
+      
+        long totalPages = service.getTotalSearchPages(currentSearchTerm);
+        allCandidates = new ArrayList<>();
+        for (int i = 0; i < totalPages; i++) {
+            allCandidates.addAll(service.searchCandidates(currentSearchTerm, i));
+        }
+    }
+    
+    if (allCandidates.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Không có dữ liệu để xuất!");
+        return;
+    }
+    
+    JFileChooser chooser = new JFileChooser();
+    chooser.setSelectedFile(new File("danh_sach_thi_sinh_toan_bo.xlsx"));
+    if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+        try {
+            new CandidateExportService().exportToExcel(chooser.getSelectedFile(), allCandidates);
+            JOptionPane.showMessageDialog(this, "Xuất thành công " + allCandidates.size() + " thí sinh!");
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+}
+private List<Candidate> getCurrentCandidates() {
+    if (currentSearchTerm.isEmpty()) {
+        return service.getCandidates(0);
+    }
+    return service.searchCandidates(currentSearchTerm, 0);
+}
 }

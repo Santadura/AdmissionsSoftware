@@ -63,9 +63,8 @@ public class ScoreImportDialog extends JDialog {
         filePanel.add(btnBrowse, BorderLayout.EAST);
 
         cboLoai = new JComboBox<>(new String[]{
-                "THPT",
-                "VSAT",
-                "DGNL"
+                "THPT - File DS thí sinh",
+                "VSAT + DGNL - File điểm riêng"
         });
 
         form.add(new JLabel("File Excel"));
@@ -142,29 +141,80 @@ public class ScoreImportDialog extends JDialog {
             return;
         }
 
-        try {
+        String type = cboLoai.getSelectedItem().toString();
 
-            service.importExcel(
-                    selectedFile,
-                    cboLoai.getSelectedItem().toString()
-            );
+        JDialog progressDialog = new JDialog(
+                (JFrame) SwingUtilities.getWindowAncestor(this),
+                "Đang import điểm...",
+                true
+        );
 
-            imported = true;
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Import thành công"
-            );
+        JLabel lblMessage = new JLabel("Đang xử lý file Excel, vui lòng chờ...");
+        lblMessage.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
-            dispose();
+        JProgressBar progressBar = new JProgressBar();
+        progressBar.setIndeterminate(true);
 
-        } catch (Exception e) {
+        panel.add(lblMessage, BorderLayout.NORTH);
+        panel.add(progressBar, BorderLayout.CENTER);
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Lỗi: " + e.getMessage()
-            );
-        }
+        progressDialog.setContentPane(panel);
+        progressDialog.setSize(420, 130);
+        progressDialog.setLocationRelativeTo(this);
+
+        SwingWorker<Void, Void> worker = new SwingWorker<>() {
+
+            @Override
+            protected Void doInBackground() throws Exception {
+
+                if (type.startsWith("THPT")) {
+
+                    service.importThptFromCandidateExcel(selectedFile);
+
+                } else if (type.startsWith("VSAT")) {
+
+                    service.importVsaTDgnlExcel(selectedFile);
+                }
+
+                return null;
+            }
+
+            @Override
+            protected void done() {
+
+                progressDialog.dispose();
+
+                try {
+
+                    get();
+
+                    imported = true;
+
+                    JOptionPane.showMessageDialog(
+                            ScoreImportDialog.this,
+                            "Import điểm thành công!"
+                    );
+
+                    dispose();
+
+                } catch (Exception e) {
+
+                    JOptionPane.showMessageDialog(
+                            ScoreImportDialog.this,
+                            "Lỗi import: " + e.getMessage(),
+                            "Lỗi",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        };
+
+        worker.execute();
+
+        progressDialog.setVisible(true);
     }
 
     public boolean showDialog() {
